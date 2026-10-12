@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Switch | Try Galaxy Demo</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/smartswitch.css" />
+</head>
+<body>
+  <div class="app-frame">
+    <div class="experience-page">
+      <section class="screen" id="screen-intro">
+        <h1>Smart Switch</h1>
+        <p class="hint">화면을 탭할 때마다 iOS와 Galaxy의 스마트 스위치 진행 화면이 번갈아 넘어갑니다.</p>
+        <button class="btn btn-primary" id="startBtn">시작하기</button>
+        <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+      </section>
+    </div>
+
+    <section class="screen splitview-screen" id="screen-splitview" hidden>
+      <button class="splitview-back" id="closeSplitBtn" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+
+      <div class="stage" id="stage">
+        <div class="panel panel--top" data-role="active" id="panelTop">
+          <div class="ss-device">
+            <span class="ss-pill">iOS</span>
+            <div class="ss-frame ios">
+              <div class="ss-screen">
+                <div class="ss-notch"></div>
+                <img id="imgTop" src="../assets/img/smartswitch/ios/1.png" alt="iOS 화면 1" />
+              </div>
+            </div>
+            <p class="ss-caption">화면 <b id="stepTop">1</b></p>
+          </div>
+        </div>
+        <div class="panel panel--bottom" data-role="rest" id="panelBottom">
+          <div class="ss-device">
+            <span class="ss-pill">Galaxy</span>
+            <div class="ss-frame galaxy">
+              <div class="ss-screen">
+                <div class="ss-notch"></div>
+                <img id="imgBottom" src="../assets/img/smartswitch/galaxy/1.png" alt="Galaxy 화면 1" />
+              </div>
+            </div>
+            <p class="ss-caption">화면 <b id="stepBottom">1</b></p>
+          </div>
+          <span class="ss-hint">화면을 탭해보세요</span>
+        </div>
+
+        <div class="ss-connector" id="ssConnector" hidden>
+          <svg class="ss-connector-line" viewBox="0 0 4 84" preserveAspectRatio="none">
+            <line x1="2" y1="0" x2="2" y2="84" />
+          </svg>
+        </div>
+
+        <div class="ss-resize-handle" id="ssResizeHandle" aria-label="두 화면 비율 드래그로 조절"></div>
+      </div>
+
+      <div class="qr-scan-layer" id="qrScanLayer"></div>
+    </section>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+
+    function showScreen(id){
+      document.querySelectorAll(".screen").forEach(s => s.hidden = (s.id !== id));
+    }
+
+    const stage = el("stage");
+    const panelTop = el("panelTop");
+    const panelBottom = el("panelBottom");
+    const imgTop = el("imgTop");
+    const imgBottom = el("imgBottom");
+    const stepTopEl = el("stepTop");
+    const stepBottomEl = el("stepBottom");
+
+    // 폴더에 실제로 존재하는 번호만 적어둠
+    const AVAILABLE = {
+      top: { folder: "../assets/img/smartswitch/ios", nums: [1, 2, 3, 4, 5, 6, 7, 9, 14] },
+      bottom: { folder: "../assets/img/smartswitch/galaxy", nums: [1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14] },
+    };
+    const MAX_STEP = Math.max(...AVAILABLE.top.nums, ...AVAILABLE.bottom.nums);
+
+    let step = 1;
+    let active = "top";
+    let shown = { top: 1, bottom: 1 };
+    // 현재 번호에서 아직 처리 못한 쪽들 — 양쪽 다 있으면 위쪽 먼저 → 아래쪽 순으로 한 탭씩 소비
+    let queue = [];
+
+    function queueForStep(n){
+      const q = [];
+      if (AVAILABLE.top.nums.includes(n)) q.push("top");
+      if (AVAILABLE.bottom.nums.includes(n)) q.push("bottom");
+      return q;
+    }
+
+    /* 위 패널 비율(%) — 탭하면 66.667/33.333으로 스냅되고, 핸들을 드래그하면 자유롭게 바뀐다 */
+    const MIN_RATIO = 18;
+    const MAX_RATIO = 82;
+
+    function setSplitRatio(topPercent){
+      const p = Math.max(MIN_RATIO, Math.min(MAX_RATIO, topPercent));
+      panelTop.style.flexBasis = p + "%";
+      panelBottom.style.flexBasis = (100 - p) + "%";
+      el("ssConnector").style.top = p + "%";
+      el("ssResizeHandle").style.top = p + "%";
+      return p;
+    }
+
+    /* 드래그 중 비율에 비례해 폰 크기·배경·pill 색을 연속적으로 보간 (탭 시 active/rest 상태와 동일한 양 끝값 사용) */
+    const REST_SCALE = 0.55;
+    const ACTIVE_SCALE = 1.4;
+    const COLOR = {
+      background: [255, 255, 255],
+      muted: [245, 245, 245],
+      foreground: [10, 10, 10],
+      mutedForeground: [115, 115, 115],
+    };
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const lerpColor = (c1, c2, t) =>
+      `rgb(${Math.round(lerp(c1[0], c2[0], t))}, ${Math.round(lerp(c1[1], c2[1], t))}, ${Math.round(lerp(c1[2], c2[2], t))})`;
+
+    function applyDragVisual(topPercent){
+      const tTop = (topPercent - MIN_RATIO) / (MAX_RATIO - MIN_RATIO);
+      const tBottom = 1 - tTop;
+
+      [{ panel: panelTop, t: tTop }, { panel: panelBottom, t: tBottom }].forEach(({ panel, t }) => {
+        panel.querySelector(".ss-device").style.transform = `scale(${lerp(REST_SCALE, ACTIVE_SCALE, t)})`;
+        panel.style.backgroundColor = lerpColor(COLOR.muted, COLOR.background, t);
+        const pill = panel.querySelector(".ss-pill");
+        pill.style.backgroundColor = lerpColor(COLOR.muted, COLOR.foreground, t);
+        pill.style.color = lerpColor(COLOR.mutedForeground, COLOR.background, t);
+      });
+    }
+
+    function clearDragOverrides(){
+      [panelTop, panelBottom].forEach((panel) => {
+        panel.style.backgroundColor = "";
+        panel.querySelector(".ss-device").style.transform = "";
+        const pill = panel.querySelector(".ss-pill");
+        pill.style.backgroundColor = "";
+        pill.style.color = "";
+      });
+    }
+
+    let hasPlayedQrAnim = false;
+
+    function applyAction(side){
+      active = side;
+      shown[side] = step;
+      const { folder } = AVAILABLE[side];
+      (side === "top" ? imgTop : imgBottom).src = `${folder}/${step}.png`;
+
+      clearDragOverrides();
+      panelTop.dataset.role = active === "top" ? "active" : "rest";
+      panelBottom.dataset.role = active === "bottom" ? "active" : "rest";
+      setSplitRatio(active === "top" ? 66.667 : 33.333);
+
+      stepTopEl.textContent = shown.top;
+      stepBottomEl.textContent = shown.bottom;
+
+      // iOS·Galaxy 둘 다 "화면 5"(QR 스캔 단계)에 도달하면 위 패널의 폰이 아래로 튀어나와 QR을 찍어가는 연출 재생
+      if (!hasPlayedQrAnim && shown.top === 5 && shown.bottom === 5) {
+        hasPlayedQrAnim = true;
+        setTimeout(playQrScanAnimation, 650); // 패널 리사이즈 트랜지션(620ms)이 끝난 뒤 위치를 측정
+      }
+
+      // iOS 화면 6 → 7(연결 완료) 전환: 폰이 5% 작아졌다가 커지며 완료되는 느낌의 바운스
+      if (side === "top" && step === 7) {
+        const frame = panelTop.querySelector(".ss-frame");
+        frame.animate([
+          { transform: "scale(1)" },
+          { transform: "scale(0.95)", offset: 0.35 },
+          { transform: "scale(1.08)", offset: 0.65 },
+          { transform: "scale(1)" },
+        ], { duration: 650, easing: "cubic-bezier(.34,1.56,.64,1)" });
+
+        // 완료 순간 폰 뒤에서 파란 원이 커지며 사라지는 버스트
+        const burst = document.createElement("div");
+        burst.className = "ss-success-burst";
+        panelTop.insertBefore(burst, panelTop.firstChild);
+        const burstAnim = burst.animate([
+          { transform: "scale(0.3)", opacity: 0.55 },
+          { transform: "scale(2.4)", opacity: 0 },
+        ], { duration: 700, delay: 150, easing: "ease-out" });
+        burstAnim.onfinish = () => burst.remove();
+      }
+
+      // 연결 완료 이후로는 두 기기 사이에 데이터가 오가는 연결 표시를 계속 보여줌
+      if (shown.top >= 7) {
+        el("ssConnector").hidden = false;
+      }
+
+      // iOS 화면 9(전송 중)부터 갤럭시 화면 11(전송 완료)이 되기 전까지: 파란 점선 + 아이콘이 내려가는 연출
+      if (shown.bottom >= 11) {
+        stopTransferEffect();
+      } else if (shown.top >= 9) {
+        startTransferEffect();
+      }
+    }
+
+    let transferEffectOn = false;
+    let transferIntervalId = null;
+
+    function spawnFallingIcon(){
+      const connector = el("ssConnector");
+      if (connector.hidden) return;
+      const icon = document.createElement("div");
+      icon.className = "ss-falling-icon";
+      connector.appendChild(icon);
+      const anim = icon.animate([
+        { top: "-6%", opacity: 0 },
+        { top: "12%", opacity: 1, offset: 0.18 },
+        { top: "85%", opacity: 1, offset: 0.82 },
+        { top: "100%", opacity: 0 },
+      ], { duration: 900, easing: "ease-in" });
+      anim.onfinish = () => icon.remove();
+    }
+
+    function startTransferEffect(){
+      if (transferEffectOn) return;
+      transferEffectOn = true;
+      el("ssConnector").classList.add("is-transferring");
+      spawnFallingIcon();
+      transferIntervalId = setInterval(spawnFallingIcon, 420);
+    }
+
+    function stopTransferEffect(){
+      transferEffectOn = false;
+      el("ssConnector").classList.remove("is-transferring");
+      if (transferIntervalId) { clearInterval(transferIntervalId); transferIntervalId = null; }
+      el("ssConnector").querySelectorAll(".ss-falling-icon").forEach((n) => n.remove());
+    }
+
+    function resetSplitview(){
+      step = 1;
+      active = "top";
+      shown = { top: 1, bottom: 1 };
+      queue = [];
+      hasPlayedQrAnim = false;
+      clearDragOverrides();
+      stopTransferEffect();
+      el("qrScanLayer").innerHTML = "";
+      el("ssConnector").hidden = true;
+      panelTop.querySelectorAll(".ss-success-burst").forEach((n) => n.remove());
+      panelTop.querySelector(".ss-frame").style.visibility = "";
+      imgTop.src = `${AVAILABLE.top.folder}/1.png`;
+      imgBottom.src = `${AVAILABLE.bottom.folder}/1.png`;
+      panelTop.dataset.role = "active";
+      panelBottom.dataset.role = "rest";
+      setSplitRatio(66.667);
+      stepTopEl.textContent = 1;
+      stepBottomEl.textContent = 1;
+    }
+
+    /* 위 패널의 폰이 튀어나와 아래 패널의 QR코드를 찍고 돌아오는 연출 */
+    function playQrScanAnimation(){
+      const sourceFrame = panelTop.querySelector(".ss-frame");
+      const targetFrame = panelBottom.querySelector(".ss-frame");
+      const layer = el("qrScanLayer");
+      if (!sourceFrame || !targetFrame || !layer) return;
+
+      const layerRect = layer.getBoundingClientRect();
+      const startRect = sourceFrame.getBoundingClientRect();
+      const targetRect = targetFrame.getBoundingClientRect();
+
+      const startX = startRect.left - layerRect.left;
+      const startY = startRect.top - layerRect.top;
+      // QR코드는 보통 화면 중앙보다 약간 아래쪽에 있음
+      const targetCenterX = (targetRect.left - layerRect.left) + targetRect.width / 2;
+      const targetCenterY = (targetRect.top - layerRect.top) + targetRect.height * 0.62;
+
+      const startScale = 0.6;
+      const peakScale = 0.85;
+      const dx = targetCenterX - (startX + (startRect.width * startScale) / 2);
+      const dy = targetCenterY - (startY + (startRect.height * startScale) / 2);
+
+      const clone = sourceFrame.cloneNode(true);
+      clone.classList.add("qr-flying-frame");
+      clone.style.left = startX + "px";
+      clone.style.top = startY + "px";
+      layer.appendChild(clone);
+      sourceFrame.style.visibility = "hidden";
+
+      const anim = clone.animate([
+        { transform: `translate(0px, 0px) rotate(0deg) scale(${startScale})`, offset: 0 },
+        { transform: `translate(${dx * 0.9}px, ${dy * 0.9}px) rotate(-12deg) scale(${peakScale})`, offset: 0.42 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(-8deg) scale(${peakScale})`, offset: 0.5 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(-8deg) scale(${peakScale * 1.06})`, offset: 0.62 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(-8deg) scale(${peakScale})`, offset: 0.74 },
+        { transform: `translate(0px, 0px) rotate(0deg) scale(${startScale})`, offset: 1 },
+      ], { duration: 1900, easing: "cubic-bezier(.22,.61,.36,1)" });
+
+      // 폰이 도착하는 타이밍에 QR 지점에서 스캔 플래시(펄스 링) 표시
+      setTimeout(() => {
+        const pulse = document.createElement("div");
+        pulse.className = "qr-scan-pulse";
+        pulse.style.left = targetCenterX + "px";
+        pulse.style.top = targetCenterY + "px";
+        layer.appendChild(pulse);
+        const pulseAnim = pulse.animate([
+          { transform: "scale(0.4)", opacity: 0.9 },
+          { transform: "scale(1.6)", opacity: 0 },
+        ], { duration: 650, easing: "ease-out" });
+        pulseAnim.onfinish = () => pulse.remove();
+      }, 1900 * 0.5);
+
+      anim.onfinish = () => {
+        clone.remove();
+        sourceFrame.style.visibility = "";
+      };
+    }
+
+    stage.addEventListener("click", () => {
+      // 현재 번호에 남은 처리가 없으면, 다음 번호로 넘어가서 큐를 새로 만든다
+      while (queue.length === 0) {
+        if (step >= MAX_STEP) return;
+        step += 1;
+        queue = queueForStep(step);
+      }
+      const side = queue.shift();
+      applyAction(side);
+    });
+
+    el("startBtn").onclick = () => {
+      resetSplitview();
+      showScreen("screen-splitview");
+    };
+
+    el("closeSplitBtn").onclick = (e) => {
+      e.stopPropagation();
+      showScreen("screen-intro");
+    };
+
+    /* 경계선 핸들 드래그 — 탭 흐름과 별개로 두 패널 비율을 자유롭게 조절 */
+    const resizeHandle = el("ssResizeHandle");
+
+    resizeHandle.addEventListener("click", (e) => e.stopPropagation());
+
+    resizeHandle.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      resizeHandle.setPointerCapture(e.pointerId);
+      stage.classList.add("is-dragging");
+
+      const onMove = (ev) => {
+        const stageRect = stage.getBoundingClientRect();
+        const percent = ((ev.clientY - stageRect.top) / stageRect.height) * 100;
+        const applied = setSplitRatio(percent);
+        applyDragVisual(applied);
+      };
+      const onUp = (ev) => {
+        stage.classList.remove("is-dragging");
+        resizeHandle.releasePointerCapture(e.pointerId);
+        resizeHandle.removeEventListener("pointermove", onMove);
+        resizeHandle.removeEventListener("pointerup", onUp);
+      };
+      resizeHandle.addEventListener("pointermove", onMove);
+      resizeHandle.addEventListener("pointerup", onUp);
+    });
+  </script>
+</body>
+</html>

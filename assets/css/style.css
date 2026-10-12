@@ -1,0 +1,139 @@
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --border: #e5e5e5;
+  --ring: #0a0a0a;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system, sans-serif;
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.app-frame {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 780px;
+  overflow-y: auto;
+  margin: 0 auto;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 400px) {
+  body {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .app-frame {
+    margin: 40px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+header {
+  padding: 48px 24px 24px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+header p {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+main {
+  flex: 1;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 24px;
+}
+
+.card {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-decoration: none;
+  color: var(--card-foreground);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--ring);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+/* 체험 상세 페이지 공통 */
+.experience-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.back-link:hover {
+  border-color: var(--ring);
+}

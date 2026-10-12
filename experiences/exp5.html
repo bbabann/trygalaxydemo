@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AR Try-On | Try Galaxy Demo</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/artryon.css" />
+</head>
+<body>
+  <div class="app-frame">
+    <div class="experience-page">
+      <section class="screen" id="screen-intro">
+        <h1>AR Try-On</h1>
+        <p class="hint">워치는 손목, 반지는 검지, 안경은 얼굴에 맞춰 따라다니는 기술 검증용 프로토타입입니다. 지금은 실제 제품 이미지 대신 임의의 플레이스홀더 이미지를 사용합니다.</p>
+        <button class="btn btn-primary" id="startBtn">시작하기</button>
+        <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+      </section>
+    </div>
+
+    <section class="screen ar-screen" id="screen-ar" hidden>
+      <video id="arVideo" autoplay muted playsinline webkit-playsinline></video>
+      <canvas id="arCanvas"></canvas>
+
+      <button class="ar-back" id="closeArBtn" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+
+      <div class="ar-status" id="arStatus">손목을 비춰보세요</div>
+
+      <div class="ar-toggle">
+        <button class="ar-toggle-btn is-active" id="modeWatchBtn" data-mode="watch">워치</button>
+        <button class="ar-toggle-btn" id="modeRingBtn" data-mode="ring">반지</button>
+        <button class="ar-toggle-btn" id="modeGlassesBtn" data-mode="glasses">안경</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { HandLandmarker, FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9";
+
+    const el = (id) => document.getElementById(id);
+    const video = el("arVideo");
+    const canvas = el("arCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let stream = null;
+    let loopActive = false;
+    let mode = "watch"; // "watch" | "ring" | "glasses"
+
+    let filesetResolver = null;
+    let handLandmarker = null;
+    let faceLandmarker = null;
+
+    const IMAGES = {};
+    function loadImage(src){
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = src;
+      });
+    }
+
+    /* 투명 PNG가 실제 제품보다 훨씬 큰 여백을 가진 경우(예: 원본 캔버스 그대로)를 대비해,
+       알파 채널을 스캔해서 실제 콘텐츠가 차지하는 영역만 잘라낸다. */
+    function computeAlphaBBox(img){
+      const fallback = { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+      try {
+        const off = document.createElement("canvas");
+        off.width = img.naturalWidth;
+        off.height = img.naturalHeight;
+        const offCtx = off.getContext("2d", { willReadFrequently: true });
+        offCtx.drawImage(img, 0, 0);
+        const { data } = offCtx.getImageData(0, 0, off.width, off.height);
+
+        let minX = off.width, minY = off.height, maxX = 0, maxY = 0;
+        for (let y = 0; y < off.height; y++) {
+          for (let x = 0; x < off.width; x++) {
+            if (data[(y * off.width + x) * 4 + 3] > 10) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (maxX < minX || maxY < minY) return fallback;
+
+        const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.02);
+        minX = Math.max(0, minX - pad);
+        minY = Math.max(0, minY - pad);
+        maxX = Math.min(off.width - 1, maxX + pad);
+        maxY = Math.min(off.height - 1, maxY + pad);
+        return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+      } catch (e) {
+        // file://로 열어 캔버스가 오염된 경우 등 — 크롭 없이 원본 전체를 그대로 사용
+        console.warn("alpha bbox 계산 실패, 원본 이미지를 그대로 사용합니다:", e);
+        return fallback;
+      }
+    }
+
+    async function loadCroppedImage(src){
+      const img = await loadImage(src);
+      return { img, bbox: computeAlphaBBox(img) };
+    }
+
+    function showScreen(id){
+      document.querySelectorAll(".screen").forEach(s => s.hidden = (s.id !== id));
+    }
+
+    async function openCamera(){
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (e) {
+        alert("카메라 권한을 확인해주세요. (" + e.message + ")");
+        showScreen("screen-intro");
+        return false;
+      }
+      video.srcObject = stream;
+      return true;
+    }
+
+    function closeCamera(){
+      loopActive = false;
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    }
+
+    function resizeCanvas(){
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    }
+
+    async function ensureFileset(){
+      if (filesetResolver) return filesetResolver;
+      filesetResolver = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
+      );
+      return filesetResolver;
+    }
+
+    async function ensureHandLandmarker(){
+      if (handLandmarker) return handLandmarker;
+      const fs = await ensureFileset();
+      handLandmarker = await HandLandmarker.createFromOptions(fs, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+          delegate: "CPU"
+        },
+        runningMode: "VIDEO",
+        numHands: 1
+      });
+      return handLandmarker;
+    }
+
+    async function ensureFaceLandmarker(){
+      if (faceLandmarker) return faceLandmarker;
+      const fs = await ensureFileset();
+      faceLandmarker = await FaceLandmarker.createFromOptions(fs, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+          delegate: "CPU"
+        },
+        runningMode: "VIDEO",
+        numFaces: 1
+      });
+      return faceLandmarker;
+    }
+
+    /* 정규화 좌표(0~1) → 전면카메라 거울모드(object-fit:cover) 캔버스 픽셀 좌표 */
+    function mapPoint(nx, ny, videoW, videoH, canvasW, canvasH){
+      const scale = Math.max(canvasW / videoW, canvasH / videoH);
+      const offsetX = (canvasW - videoW * scale) / 2;
+      const offsetY = (canvasH - videoH * scale) / 2;
+      let x = nx * videoW * scale + offsetX;
+      let y = ny * videoH * scale + offsetY;
+      x = canvasW - x; // 거울모드 반전
+      return { x, y };
+    }
+
+    /* entry = { img, bbox } — bbox는 투명 여백을 뺀 실제 콘텐츠 영역(알파 스캔으로 계산됨) */
+    function drawEntry(entry, scaleX, scaleY){
+      const { img, bbox } = entry;
+      ctx.scale(scaleX, scaleY);
+      ctx.drawImage(img, bbox.x, bbox.y, bbox.w, bbox.h, -bbox.w / 2, -bbox.h / 2, bbox.w, bbox.h);
+    }
+
+    function drawPlacedImage(entry, center, angle, scaleX, scaleY = scaleX){
+      ctx.save();
+      ctx.translate(center.x, center.y);
+      ctx.rotate(angle);
+      drawEntry(entry, scaleX, scaleY);
+      ctx.restore();
+    }
+
+    /*
+     * 정면/측면 이미지 크로스페이드 — 깊이(z) 차이로 "얼마나 돌아갔는지"를 추정해 두 이미지를 섞는다.
+     * zDiff: 기준이 되는 두 랜드마크의 z 차이(부호가 돌아간 방향을 의미), zScaleForFull1: 이 값이면 완전히 측면(t=1)으로 간주.
+     */
+    function sideBlend(zDiff, zScaleForFull1){
+      const t = Math.max(0, Math.min(1, Math.abs(zDiff) / zScaleForFull1));
+      const mirror = zDiff < 0;
+      return { t, mirror };
+    }
+
+    function drawBlendedImage(frontEntry, sideEntry, center, angle, scale, t, mirror){
+      ctx.save();
+      ctx.translate(center.x, center.y);
+      ctx.rotate(angle);
+      if (t < 0.98) {
+        ctx.save();
+        ctx.globalAlpha = 1 - t;
+        drawEntry(frontEntry, scale, scale);
+        ctx.restore();
+      }
+      if (t > 0.02) {
+        ctx.save();
+        ctx.globalAlpha = t;
+        drawEntry(sideEntry, mirror ? -scale : scale, scale);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    function drawWatch(landmarks, videoW, videoH){
+      const P = (i) => mapPoint(landmarks[i].x, landmarks[i].y, videoW, videoH, canvas.width, canvas.height);
+      const wrist = P(0);
+      const middleMcp = P(9);
+      const indexMcp = P(5);
+      const pinkyMcp = P(17);
+
+      const handWidth = Math.hypot(indexMcp.x - pinkyMcp.x, indexMcp.y - pinkyMcp.y);
+      // 손목→중지 MCP 방향(팔 축) 자체를 회전각으로 써야 밴드(로컬 세로축)가 그 축과 "수직"이 되어 손목을 가로지른다.
+      // (+90도를 더하면 오히려 팔 축과 평행해져 버린다 — 실제 테스트에서 발견된 버그)
+      const angle = Math.atan2(middleMcp.y - wrist.y, middleMcp.x - wrist.x);
+
+      // 워치 사진은 케이스(페이스)가 가장 넓은 부분이라 bbox 폭이 곧 케이스 폭 — 손목 폭보다 살짝 크게 (+1.2배 보정)
+      const scale = (handWidth * 1.15 * 1.2) / IMAGES.watch.bbox.w;
+
+      // 검지-새끼 MCP의 상대 깊이(z) 차이로 손목이 돌아간 정도를 추정해 정면/측면 이미지를 섞는다
+      const { t, mirror } = sideBlend(landmarks[5].z - landmarks[17].z, 0.12);
+      drawBlendedImage(IMAGES.watch, IMAGES.watchSide, wrist, angle, scale, t, mirror);
+    }
+
+    function drawRing(landmarks, videoW, videoH){
+      const P = (i) => mapPoint(landmarks[i].x, landmarks[i].y, videoW, videoH, canvas.width, canvas.height);
+      const indexMcp = P(5);
+      const indexPip = P(6);
+
+      const center = { x: (indexMcp.x + indexPip.x) / 2, y: (indexMcp.y + indexPip.y) / 2 };
+      const segLen = Math.hypot(indexPip.x - indexMcp.x, indexPip.y - indexMcp.y);
+      const fingerAngle = Math.atan2(indexPip.y - indexMcp.y, indexPip.x - indexMcp.x);
+      // 로컬 세로축을 손가락 방향과 "나란하게" 맞춘 뒤 세로를 찌그러뜨려야, 원통에 끼운 밴드처럼 손가락 길이 방향으로 납작해 보인다.
+      const angle = fingerAngle - Math.PI / 2;
+
+      // 반지 폭은 손가락 "굵기"에 맞아야 하는데, 마디 길이(segLen)는 굵기보다 훨씬 길다 — 비율로 환산 (+1.2배 보정)
+      const scale = (segLen * 0.42 * 1.2) / IMAGES.ring.bbox.w;
+      // 실사 제품샷이라 이미 입체감이 있어서, 플레이스홀더만큼 세로로 많이 찌그러뜨리지 않음
+      drawPlacedImage(IMAGES.ring, center, angle, scale, scale * 0.8);
+    }
+
+    function drawGlasses(landmarks, videoW, videoH){
+      const P = (i) => mapPoint(landmarks[i].x, landmarks[i].y, videoW, videoH, canvas.width, canvas.height);
+      const rightEye = P(33);
+      const leftEye = P(263);
+
+      const center = { x: (rightEye.x + leftEye.x) / 2, y: (rightEye.y + leftEye.y) / 2 };
+      const eyeDist = Math.hypot(leftEye.x - rightEye.x, leftEye.y - rightEye.y);
+      const angle = Math.atan2(leftEye.y - rightEye.y, leftEye.x - rightEye.x);
+
+      // 눈 바깥쪽 코너 사이 거리는 안경 렌즈 중심 간격보다 넓으므로 기준값을 더 크게 잡아 보정
+      const scale = (eyeDist / 225) * 1.0;
+
+      // 양쪽 눈의 상대 깊이(z) 차이로 고개가 돌아간 정도를 추정해 정면/측면 이미지를 섞는다
+      const { t, mirror } = sideBlend(landmarks[33].z - landmarks[263].z, 0.05);
+      drawBlendedImage(IMAGES.glasses, IMAGES.glassesSide, center, angle, scale, t, mirror);
+    }
+
+    async function loop(){
+      if (!loopActive) return;
+
+      if (video.readyState >= 2) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const now = performance.now();
+
+        try {
+          if (mode === "watch" || mode === "ring") {
+            const landmarker = await ensureHandLandmarker();
+            const result = landmarker.detectForVideo(video, now);
+            const landmarks = result.landmarks && result.landmarks[0];
+            if (landmarks) {
+              el("arStatus").textContent = mode === "watch" ? "손목에 맞춰 표시 중" : "검지에 맞춰 표시 중";
+              if (mode === "watch") drawWatch(landmarks, video.videoWidth, video.videoHeight);
+              else drawRing(landmarks, video.videoWidth, video.videoHeight);
+            } else {
+              el("arStatus").textContent = mode === "watch" ? "손목을 비춰보세요" : "검지를 비춰보세요";
+            }
+          } else if (mode === "glasses") {
+            const landmarker = await ensureFaceLandmarker();
+            const result = landmarker.detectForVideo(video, now);
+            const landmarks = result.faceLandmarks && result.faceLandmarks[0];
+            if (landmarks) {
+              el("arStatus").textContent = "얼굴에 맞춰 표시 중";
+              drawGlasses(landmarks, video.videoWidth, video.videoHeight);
+            } else {
+              el("arStatus").textContent = "얼굴을 비춰보세요";
+            }
+          }
+        } catch (e) {
+          el("arStatus").textContent = "모델 로딩 중...";
+        }
+      }
+
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);
+      else requestAnimationFrame(loop);
+    }
+
+    function setMode(nextMode){
+      mode = nextMode;
+      document.querySelectorAll(".ar-toggle-btn").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.mode === nextMode);
+      });
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    el("modeWatchBtn").onclick = () => setMode("watch");
+    el("modeRingBtn").onclick = () => setMode("ring");
+    el("modeGlassesBtn").onclick = () => setMode("glasses");
+
+    el("startBtn").onclick = async () => {
+      showScreen("screen-ar");
+      setMode("watch");
+      resizeCanvas();
+      const ok = await openCamera();
+      if (!ok) return;
+      if (!IMAGES.watch) {
+        IMAGES.watch = await loadCroppedImage("../assets/img/ar/watch-real.png");
+        IMAGES.watchSide = await loadCroppedImage("../assets/img/ar/watch-side.svg");
+        IMAGES.ring = await loadCroppedImage("../assets/img/ar/ring-real.png");
+        IMAGES.glasses = await loadCroppedImage("../assets/img/ar/glasses.svg");
+        IMAGES.glassesSide = await loadCroppedImage("../assets/img/ar/glasses-side.svg");
+      }
+      loopActive = true;
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);
+      else requestAnimationFrame(loop);
+    };
+
+    el("closeArBtn").onclick = () => {
+      closeCamera();
+      showScreen("screen-intro");
+    };
+  </script>
+</body>
+</html>

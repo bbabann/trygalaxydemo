@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My FanCam | Try Galaxy Demo</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/fancam.css" />
+</head>
+<body>
+  <div class="app-frame">
+    <div class="experience-page" id="fancamApp">
+      <section class="screen" id="screen-intro">
+        <h1>My FanCam</h1>
+        <p class="hint">먼저 영상을 끝까지 촬영합니다. 보정(인물 추적·크롭)은 촬영이 완전히 끝난 다음, 별도 단계에서 적용됩니다 — 실제 갤러리 앱의 동작과 동일한 순서입니다.</p>
+        <button class="btn btn-primary" id="startBtn">촬영 시작하기</button>
+        <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+      </section>
+
+      <section class="screen" id="screen-error" hidden>
+        <p class="hint error" id="errorText"></p>
+        <button class="btn btn-primary" id="errorRetryBtn">다시 시도</button>
+      </section>
+    </div>
+
+    <section class="screen gallery-screen" id="screen-review" hidden>
+      <video id="reviewVideo" autoplay muted loop playsinline></video>
+
+      <div class="gallery-topbar">
+        <button class="gallery-back" id="closeReviewBtn" aria-label="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <div class="gallery-iconrow">
+          <button class="icon-btn-light" aria-label="복원 보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 3v5h5" /></svg>
+          </button>
+          <button class="icon-btn-light" aria-label="미리보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+          </button>
+          <button class="icon-btn-light" aria-label="더보기">
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <p class="gallery-hint">탭하면 인물을 추적해 1:1 영상으로 다시 만들어요</p>
+
+      <div class="gallery-bottombar">
+        <button class="gallery-action" aria-label="좋아요">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" /></svg>
+        </button>
+        <button class="gallery-action" aria-label="편집">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+        </button>
+        <button class="gallery-action gallery-action--primary" id="goAnalyzeBtn" aria-label="보정 시작하기">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" /></svg>
+        </button>
+        <button class="gallery-action" aria-label="공유">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6" /><circle cx="6" cy="12" r="2.6" /><circle cx="18" cy="19" r="2.6" /><path d="M8.3 10.7l7.4-4.2M8.3 13.3l7.4 4.2" /></svg>
+        </button>
+        <button class="gallery-action" id="retakeBtn" aria-label="삭제하고 다시 찍기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13h10l1-13" /></svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="screen ai-screen" id="screen-analyzing" hidden>
+      <h1>촬영본 분석 중</h1>
+      <p class="hint">저장된 영상을 프레임 단위로 다시 읽으며 등장 인물을 찾고 있습니다.</p>
+      <div class="progress"><div class="progress-fill" id="analyzeProgress"></div></div>
+      <p class="status" id="analyzeStatus">0 / 0 프레임</p>
+      <p class="ai-caption">보정 결과는 예상과 다르게 나올 수 있어요.</p>
+    </section>
+
+    <section class="screen ai-screen" id="screen-select" hidden>
+      <p class="hint" style="margin-bottom:-4px">따라갈 인물을 탭하세요</p>
+      <div class="choice-wrap">
+        <canvas id="choiceCanvas"></canvas>
+        <div class="choice-overlay" id="choiceOverlay"></div>
+      </div>
+      <p class="ai-caption">보정 결과는 예상과 다르게 나올 수 있어요.</p>
+    </section>
+
+    <section class="screen ai-screen" id="screen-rendering" hidden>
+      <h1>1:1 정사각형 영상으로 재구성 중</h1>
+      <p class="hint">선택한 인물을 중심으로 매 프레임을 다시 크롭하고 있습니다.</p>
+      <div class="progress"><div class="progress-fill" id="renderProgress"></div></div>
+      <p class="ai-caption">보정 결과는 예상과 다르게 나올 수 있어요.</p>
+    </section>
+
+    <section class="screen result-screen" id="screen-result" hidden>
+      <video id="resultVideo" autoplay muted loop playsinline></video>
+      <div class="result-links">
+        <a id="downloadLink" class="text-link" download="my-fancam.webm">다운로드</a>
+        <button class="text-link" id="restartBtn">새로 만들기</button>
+      </div>
+    </section>
+
+    <section class="screen camera-screen" id="screen-capture" hidden>
+        <video id="captureVideo" autoplay muted playsinline webkit-playsinline></video>
+
+        <div class="grid-overlay" id="gridOverlay" hidden>
+          <span class="grid-line grid-line--v" style="left:33.333%"></span>
+          <span class="grid-line grid-line--v" style="left:66.666%"></span>
+          <span class="grid-line grid-line--h" style="top:33.333%"></span>
+          <span class="grid-line grid-line--h" style="top:66.666%"></span>
+        </div>
+
+        <button class="icon-btn camera-back" id="closeCaptureBtn" aria-label="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </svg>
+        </button>
+
+        <div class="indicator-cluster">
+          <div class="indicator-pill">
+            <svg class="indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+              <line x1="3" y1="3" x2="21" y2="21" />
+            </svg>
+            <svg class="indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="13" r="8" />
+              <path d="M12 9v4l3 2" />
+              <path d="M9 2h6" />
+            </svg>
+            <span class="indicator-text" id="captureTimer">0.0s / 8s</span>
+          </div>
+          <div class="indicator-badge">MAX 8S</div>
+        </div>
+
+        <div class="camera-bottom">
+          <div class="quick-row">
+            <div class="zoom-pill" id="zoomPill">
+              <button class="zoom-opt" data-zoom="0.6">.6</button>
+              <button class="zoom-opt is-active" data-zoom="1">1x</button>
+              <button class="zoom-opt" data-zoom="2">2</button>
+              <button class="zoom-opt" data-zoom="5">5</button>
+              <button class="zoom-opt" data-zoom="10">10</button>
+            </div>
+            <button class="icon-btn" id="gridToggleBtn" aria-label="그리드 표시">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="9" y1="3" x2="9" y2="21" />
+                <line x1="15" y1="3" x2="15" y2="21" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="3" y1="15" x2="21" y2="15" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="shutter-row">
+            <span class="gallery-thumb" aria-hidden="true"></span>
+            <button class="shutter-btn" id="recordBtn" aria-label="녹화 시작/종료"></button>
+            <button class="icon-btn" id="switchCamBtn" aria-label="카메라 전환">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h11l-3-3" />
+                <path d="M20 17H9l3 3" />
+                <path d="M4 7a8 8 0 0 0 8 8" />
+                <path d="M20 17a8 8 0 0 0-8-8" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="mode-list">
+            <span class="mode-item">PORTRAIT</span>
+            <span class="mode-item">PHOTO</span>
+            <span class="mode-item is-active">VIDEO</span>
+            <span class="mode-item">MORE</span>
+          </div>
+        </div>
+      </section>
+  </div>
+
+  <script type="module">
+    import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9";
+
+    const el = (id) => document.getElementById(id);
+    const MAX_RECORD_MS = 8000;
+    const SAMPLE_FPS = 5;
+    const OUT_W = 1080, OUT_H = 1080;
+
+    let faceDetector = null;
+    let stream = null;
+    let facingMode = "environment";
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordedBlob = null;
+
+    let tracks = [];
+    let sampleTimestamps = [];
+    let smoothCrop = null;
+
+    function showScreen(id){
+      document.querySelectorAll(".screen").forEach(s => s.hidden = (s.id !== id));
+    }
+
+    function showError(message, retryTo){
+      el("errorText").textContent = message;
+      el("errorRetryBtn").onclick = () => { retryTo(); };
+      showScreen("screen-error");
+    }
+
+    /* ---------------- STAGE 1: 순수 촬영 (가공 없음) ---------------- */
+
+    function resetCameraHud(){
+      el("captureVideo").style.transform = "scale(1)";
+      document.querySelectorAll(".zoom-opt").forEach(b => b.classList.toggle("is-active", b.dataset.zoom === "1"));
+      el("gridToggleBtn").classList.remove("is-active");
+      el("gridOverlay").hidden = true;
+    }
+
+    async function openCamera(){
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (e1) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } catch (e2) {
+          showError("카메라 권한을 확인해주세요. (" + e2.message + ")", () => showScreen("screen-intro"));
+          return false;
+        }
+      }
+      el("captureVideo").srcObject = stream;
+      return true;
+    }
+
+    function pickMimeType(){
+      const candidates = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+      return candidates.find(c => window.MediaRecorder && MediaRecorder.isTypeSupported(c)) || "";
+    }
+
+    let recordStartedAt = 0;
+    let recordTimerId = null;
+
+    function startRecording(){
+      recordedChunks = [];
+      const mimeType = pickMimeType();
+      mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = onRecordingStopped;
+      mediaRecorder.start();
+      recordStartedAt = performance.now();
+      el("recordBtn").classList.add("recording");
+
+      recordTimerId = setInterval(() => {
+        const elapsed = performance.now() - recordStartedAt;
+        el("captureTimer").textContent = (elapsed / 1000).toFixed(1) + "s / 8s";
+        if (elapsed >= MAX_RECORD_MS) stopRecording();
+      }, 100);
+    }
+
+    function stopRecording(){
+      if (recordTimerId) { clearInterval(recordTimerId); recordTimerId = null; }
+      el("recordBtn").classList.remove("recording");
+      if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+    }
+
+    function onRecordingStopped(){
+      recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      el("reviewVideo").src = URL.createObjectURL(recordedBlob);
+      el("reviewVideo").play().catch(() => {});
+      showScreen("screen-review");
+    }
+
+    function cancelCapture(){
+      if (recordTimerId) { clearInterval(recordTimerId); recordTimerId = null; }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.onstop = null;
+        mediaRecorder.stop();
+      }
+      el("recordBtn").classList.remove("recording");
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      showScreen("screen-intro");
+    }
+
+    /* ---------------- STAGE 2: 보정 (촬영본을 다시 불러와 처리) ---------------- */
+
+    async function ensureFaceDetector(){
+      if (faceDetector) return;
+      const filesetResolver = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
+      );
+      faceDetector = await FaceDetector.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+          delegate: "CPU"
+        },
+        runningMode: "VIDEO",
+        minDetectionConfidence: 0.5
+      });
+    }
+
+    function seekTo(video, t){
+      return new Promise((resolve) => {
+        function onSeeked(){ video.removeEventListener("seeked", onSeeked); resolve(); }
+        video.addEventListener("seeked", onSeeked);
+        video.currentTime = t;
+      });
+    }
+
+    function assignToTracks(boxes, t, frameW){
+      const used = new Set();
+      const matchThreshold = frameW * 0.18;
+
+      for (const tr of tracks){
+        const last = tr.samples[tr.samples.length - 1];
+        let bestIdx = -1, bestDist = Infinity;
+        boxes.forEach((b, i) => {
+          if (used.has(i)) return;
+          const dx = (b.x + b.w / 2) - (last.box.x + last.box.w / 2);
+          const dy = (b.y + b.h / 2) - (last.box.y + last.box.h / 2);
+          const dist = Math.hypot(dx, dy);
+          if (dist < bestDist){ bestDist = dist; bestIdx = i; }
+        });
+        if (bestIdx >= 0 && bestDist < matchThreshold){
+          tr.samples.push({ t, box: boxes[bestIdx] });
+          used.add(bestIdx);
+        }
+      }
+      boxes.forEach((b, i) => {
+        if (!used.has(i)) tracks.push({ id: tracks.length, samples: [{ t, box: b }] });
+      });
+    }
+
+    async function analyzeRecording(){
+      showScreen("screen-analyzing");
+      try { await ensureFaceDetector(); }
+      catch (e) { showError("얼굴 인식 모델을 불러오지 못했습니다. (" + e.message + ")", () => showScreen("screen-review")); return; }
+
+      const video = el("analysisVideo") || document.createElement("video");
+      video.id = "analysisVideo";
+      video.muted = true; video.playsInline = true;
+      if (!video.isConnected) document.body.appendChild(video);
+      video.style.display = "none";
+      video.src = URL.createObjectURL(recordedBlob);
+      await new Promise((res) => { video.onloadedmetadata = res; });
+
+      const duration = video.duration;
+      const step = 1 / SAMPLE_FPS;
+      sampleTimestamps = [];
+      for (let t = 0; t < duration; t += step) sampleTimestamps.push(t);
+      tracks = [];
+
+      for (let i = 0; i < sampleTimestamps.length; i++){
+        const t = sampleTimestamps[i];
+        await seekTo(video, t);
+        const result = faceDetector.detectForVideo(video, performance.now());
+        const boxes = (result.detections || []).map((d) => ({
+          x: d.boundingBox.originX, y: d.boundingBox.originY,
+          w: d.boundingBox.width, h: d.boundingBox.height
+        }));
+        assignToTracks(boxes, t, video.videoWidth);
+
+        el("analyzeProgress").style.width = ((i + 1) / sampleTimestamps.length * 100) + "%";
+        el("analyzeStatus").textContent = (i + 1) + " / " + sampleTimestamps.length + " 프레임";
+      }
+
+      const minSamples = Math.max(2, Math.floor(sampleTimestamps.length * 0.2));
+      tracks = tracks.filter((tr) => tr.samples.length >= minSamples);
+
+      if (tracks.length === 0){
+        showError("영상에서 인물을 찾지 못했습니다. 더 가까이, 더 밝은 곳에서 다시 찍어보세요.", () => showScreen("screen-review"));
+        return;
+      }
+      renderFaceChoices(video);
+    }
+
+    function renderFaceChoices(video){
+      let bestT = sampleTimestamps[0], bestCount = -1;
+      sampleTimestamps.forEach((t) => {
+        const count = tracks.filter((tr) => tr.samples.some((s) => Math.abs(s.t - t) < 1e-6)).length;
+        if (count > bestCount){ bestCount = count; bestT = t; }
+      });
+
+      seekTo(video, bestT).then(() => {
+        const canvas = el("choiceCanvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const overlay = el("choiceOverlay");
+        overlay.innerHTML = "";
+        const scaleX = () => overlay.clientWidth / canvas.width;
+        const scaleY = () => overlay.clientHeight / canvas.height;
+
+        tracks.forEach((tr, idx) => {
+          const s = tr.samples.find((s) => Math.abs(s.t - bestT) < 1e-6);
+          if (!s) return;
+          const chip = document.createElement("div");
+          chip.className = "face-chip";
+          const place = () => {
+            chip.style.left = (s.box.x * scaleX()) + "px";
+            chip.style.top = (s.box.y * scaleY()) + "px";
+            chip.style.width = (s.box.w * scaleX()) + "px";
+            chip.style.height = (s.box.h * scaleY()) + "px";
+          };
+          requestAnimationFrame(place);
+          window.addEventListener("resize", place);
+          chip.innerHTML = "<span>인물 " + (idx + 1) + "</span>";
+          chip.onclick = () => renderFanCam(video, tr);
+          overlay.appendChild(chip);
+        });
+
+        showScreen("screen-select");
+      });
+    }
+
+    function getInterpolatedBox(track, t){
+      const samples = track.samples;
+      if (t <= samples[0].t) return samples[0].box;
+      if (t >= samples[samples.length - 1].t) return samples[samples.length - 1].box;
+      for (let i = 0; i < samples.length - 1; i++){
+        const a = samples[i], b = samples[i + 1];
+        if (t >= a.t && t <= b.t){
+          const f = (t - a.t) / (b.t - a.t || 1);
+          return {
+            x: a.box.x + (b.box.x - a.box.x) * f,
+            y: a.box.y + (b.box.y - a.box.y) * f,
+            w: a.box.w + (b.box.w - a.box.w) * f,
+            h: a.box.h + (b.box.h - a.box.h) * f
+          };
+        }
+      }
+      return samples[samples.length - 1].box;
+    }
+
+    function computeCropRect(box, vw, vh, outAspect){
+      const cx = box.x + box.w / 2;
+      const cy = box.y + box.h / 2;
+      let cropH = Math.min(vh, box.h * 3.4);
+      let cropW = cropH * outAspect;
+      if (cropW > vw){ cropW = vw; cropH = cropW / outAspect; }
+      let x0 = cx - cropW / 2;
+      let y0 = cy - cropH * 0.42;
+      x0 = Math.max(0, Math.min(vw - cropW, x0));
+      y0 = Math.max(0, Math.min(vh - cropH, y0));
+      return { x: x0, y: y0, w: cropW, h: cropH };
+    }
+
+    function smoothedCrop(rect){
+      if (!smoothCrop){ smoothCrop = { ...rect }; return smoothCrop; }
+      const a = 0.18;
+      smoothCrop.x += (rect.x - smoothCrop.x) * a;
+      smoothCrop.y += (rect.y - smoothCrop.y) * a;
+      smoothCrop.w += (rect.w - smoothCrop.w) * a;
+      smoothCrop.h += (rect.h - smoothCrop.h) * a;
+      return smoothCrop;
+    }
+
+    async function renderFanCam(video, selectedTrack){
+      showScreen("screen-rendering");
+      smoothCrop = null;
+      await seekTo(video, 0);
+
+      const outCanvas = document.createElement("canvas");
+      outCanvas.width = OUT_W; outCanvas.height = OUT_H;
+      const ctx = outCanvas.getContext("2d");
+
+      const outStream = outCanvas.captureStream(30);
+      const mimeType = pickMimeType();
+      const outRecorder = mimeType ? new MediaRecorder(outStream, { mimeType }) : new MediaRecorder(outStream);
+      const outChunks = [];
+      outRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) outChunks.push(e.data); };
+      const done = new Promise((resolve) => { outRecorder.onstop = resolve; });
+
+      outRecorder.start();
+      video.muted = true;
+      await video.play();
+
+      function drawFrame(){
+        if (video.paused || video.ended) return;
+        const t = video.currentTime;
+        const box = getInterpolatedBox(selectedTrack, t);
+        const crop = smoothedCrop(computeCropRect(box, video.videoWidth, video.videoHeight, OUT_W / OUT_H));
+        ctx.drawImage(video, crop.x, crop.y, crop.w, crop.h, 0, 0, OUT_W, OUT_H);
+        el("renderProgress").style.width = Math.min(100, (t / video.duration) * 100) + "%";
+        if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(drawFrame);
+        else requestAnimationFrame(drawFrame);
+      }
+
+      video.onended = () => { outRecorder.stop(); };
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(drawFrame);
+      else requestAnimationFrame(drawFrame);
+
+      await done;
+      const outBlob = new Blob(outChunks, { type: "video/webm" });
+      const url = URL.createObjectURL(outBlob);
+      el("resultVideo").src = url;
+      el("resultVideo").play().catch(() => {});
+      el("downloadLink").href = url;
+      showScreen("screen-result");
+    }
+
+    /* ---------------- 화면 전환 연결 ---------------- */
+
+    el("startBtn").onclick = async () => {
+      showScreen("screen-capture");
+      resetCameraHud();
+      await openCamera();
+    };
+
+    el("closeCaptureBtn").onclick = () => cancelCapture();
+
+    el("switchCamBtn").onclick = async () => {
+      facingMode = (facingMode === "environment") ? "user" : "environment";
+      await openCamera();
+    };
+
+    el("recordBtn").onclick = () => {
+      if (!mediaRecorder || mediaRecorder.state === "inactive") startRecording();
+      else stopRecording();
+    };
+
+    el("retakeBtn").onclick = async () => {
+      showScreen("screen-capture");
+      resetCameraHud();
+      await openCamera();
+    };
+
+    document.querySelectorAll(".zoom-opt").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll(".zoom-opt").forEach(b => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        const scale = Math.max(1, parseFloat(btn.dataset.zoom));
+        el("captureVideo").style.transform = "scale(" + scale + ")";
+      };
+    });
+
+    el("gridToggleBtn").onclick = () => {
+      const isActive = el("gridToggleBtn").classList.toggle("is-active");
+      el("gridOverlay").hidden = !isActive;
+    };
+
+    el("goAnalyzeBtn").onclick = () => analyzeRecording();
+    el("reviewVideo").onclick = () => analyzeRecording();
+    el("closeReviewBtn").onclick = () => showScreen("screen-intro");
+
+    el("restartBtn").onclick = () => {
+      tracks = []; sampleTimestamps = []; smoothCrop = null; recordedBlob = null;
+      showScreen("screen-intro");
+    };
+  </script>
+</body>
+</html>

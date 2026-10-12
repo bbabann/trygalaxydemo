@@ -1,0 +1,368 @@
+/* Smart Switch 체험 전용 스타일 — 원본 데모(smartswitch-split-layout.html)를 사이트 톤에 맞게 이식 */
+
+[hidden] {
+  display: none !important;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: center;
+}
+
+.hint {
+  margin: 0;
+  max-width: 280px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+.btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.splitview-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.stage {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system, sans-serif;
+  color: var(--foreground);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: flex-basis 620ms cubic-bezier(0.22, 1, 0.36, 1), background-color 620ms ease;
+  flex: 0 0 50%;
+}
+
+/* 드래그 중에는 매 프레임 직접 계산해서 적용하므로 트랜지션을 모두 해제 — 커서를 즉시 따라감 */
+.stage.is-dragging .panel {
+  transition: none;
+}
+
+.stage.is-dragging .ss-device,
+.stage.is-dragging .ss-pill {
+  transition: none;
+}
+
+.panel--top {
+  border-bottom: 1px solid var(--border);
+}
+
+/* 확대된(active) 패널은 흰색, 축소된(rest) 패널은 회색 — 어느 쪽이든 상태에 따라 배경이 바뀐다 */
+.panel[data-role="active"] {
+  background: var(--background);
+}
+
+.panel[data-role="rest"] {
+  background: var(--muted);
+}
+
+.ss-pill {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  transition: background-color 400ms ease, color 400ms ease;
+}
+
+.panel[data-role="active"] .ss-pill {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.ss-device {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.panel[data-role="active"] .ss-device { transform: scale(1.4); }
+.panel[data-role="rest"] .ss-device { transform: scale(0.55); }
+
+.ss-frame {
+  width: 112px;
+  height: 243px;
+  border-radius: 15px;
+  background: var(--foreground);
+  padding: 5px;
+  box-shadow: 0 18px 32px -16px rgba(0, 0, 0, 0.25);
+}
+
+.ss-frame.ios { border-radius: 16px; }
+
+.ss-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 11px;
+  background: var(--background);
+  overflow: hidden;
+}
+
+.ss-frame.ios .ss-screen { border-radius: 13px; }
+
+.ss-screen img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ss-notch {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  background: var(--foreground);
+}
+
+.ss-frame.ios .ss-notch {
+  width: 32px;
+  height: 9px;
+  border-radius: 6px;
+}
+
+.ss-frame.galaxy .ss-notch {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  top: 8px;
+}
+
+.ss-caption {
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.ss-caption b {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.ss-hint {
+  position: absolute;
+  bottom: 1.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.splitview-back {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.splitview-back svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .ss-device { transition: none; }
+}
+
+/* ---------------- 5번 화면 QR 스캔 연출 ---------------- */
+
+.qr-scan-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.qr-flying-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.qr-scan-pulse {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  border: 3px solid var(--foreground);
+  opacity: 0;
+}
+
+/* ---------------- 연결 완료 뒤 계속 유지되는 데이터 연결 표시 ---------------- */
+
+.ss-connector {
+  position: absolute;
+  left: 50%;
+  top: 66.667%;
+  z-index: 6;
+  width: 4px;
+  height: 84px;
+  transform: translate(-50%, -50%);
+  transition: top 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.stage.is-dragging .ss-connector {
+  transition: none;
+}
+
+.ss-connector-line {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ss-connector-line line {
+  stroke: var(--muted-foreground);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 7 7;
+  animation: ss-connector-flow 0.9s linear infinite;
+  transition: stroke 300ms ease;
+}
+
+/* iOS 화면 9(전송 중)부터 갤럭시 화면 11(전송 완료) 전까지: 점선이 파란색으로, 아이콘이 떨어지는 연출 */
+.ss-connector.is-transferring .ss-connector-line line {
+  stroke: #2f6fed;
+}
+
+@keyframes ss-connector-flow {
+  to { stroke-dashoffset: -28; }
+}
+
+.ss-falling-icon {
+  position: absolute;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 2.5px;
+  background: #2f6fed;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-connector-line line { animation: none; }
+}
+
+/* ---------------- 연결 완료 순간의 파란색 버스트 ---------------- */
+
+.ss-success-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-radius: 50%;
+  background: #2f6fed;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ---------------- 경계선 드래그 핸들 — 수동으로 두 패널 비율 조절 ---------------- */
+
+.ss-resize-handle {
+  position: absolute;
+  right: 10px;
+  top: 66.667%;
+  z-index: 8;
+  width: 30px;
+  height: 16px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  touch-action: none;
+  transition: top 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stage.is-dragging .ss-resize-handle {
+  transition: none;
+  border-color: var(--foreground);
+}
+
+.ss-resize-handle::before {
+  content: "";
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--muted-foreground);
+  box-shadow: 0 4px 0 var(--muted-foreground), 0 -4px 0 var(--muted-foreground);
+}

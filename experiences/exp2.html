@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Palm Selfie | Try Galaxy Demo</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/palmselfie.css" />
+</head>
+<body>
+  <div class="app-frame">
+    <div class="experience-page">
+      <section class="screen" id="screen-intro">
+        <h1>Palm Selfie</h1>
+        <p class="hint">후면 카메라(Camera HUD)로 시작해서, 셔터를 누르면 전면 카메라(Selfie HUD)로 전환됩니다.</p>
+        <button class="btn btn-primary" id="startBtn">시작하기</button>
+        <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+      </section>
+    </div>
+
+    <!-- Camera HUD — 후면 카메라, Photo 모드 -->
+    <section class="screen photo-hud" id="screen-camera" hidden>
+      <video id="camVideoRear" autoplay muted playsinline webkit-playsinline></video>
+
+      <button class="icon-btn hud-back" id="closeCameraBtn" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+
+      <div class="hud-indicator">
+        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" />
+          <line x1="3" y1="21" x2="21" y2="3" />
+        </svg>
+        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M10 9l5 3-5 3V9Z" />
+          <line x1="4" y1="20" x2="20" y2="4" />
+        </svg>
+        <span class="hud-indicator-text">12M</span>
+        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+          <line x1="3" y1="3" x2="21" y2="21" />
+        </svg>
+      </div>
+
+      <div class="hud-quick-row">
+        <span class="zoom-badge">1x</span>
+      </div>
+
+      <div class="hud-shutter-row">
+        <span class="gallery-thumb" aria-hidden="true"></span>
+        <button class="shutter-btn" id="rearShutterBtn" aria-label="촬영"></button>
+        <button class="icon-btn" id="flipFromRearBtn" aria-label="카메라 전환">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h11l-3-3" />
+            <path d="M20 17H9l3 3" />
+            <path d="M4 7a8 8 0 0 0 8 8" />
+            <path d="M20 17a8 8 0 0 0-8-8" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="hud-mode-list">
+        <span class="mode-item">PORTRAIT</span>
+        <span class="mode-item is-active">PHOTO</span>
+        <span class="mode-item">VIDEO</span>
+        <span class="mode-item">MORE</span>
+      </div>
+    </section>
+
+    <!-- Selfie HUD — 전면 카메라, Photo 모드 -->
+    <section class="screen photo-hud" id="screen-selfie" hidden>
+      <video id="camVideoFront" autoplay muted playsinline webkit-playsinline></video>
+
+      <canvas class="hand-box-canvas" id="handBoxCanvas"></canvas>
+
+      <p class="hand-hint" id="handHint">손바닥을 화면에 비춰보세요</p>
+
+      <div class="countdown-overlay" id="countdownOverlay" hidden>
+        <span class="countdown-number" id="countdownNumber">3</span>
+      </div>
+
+      <button class="icon-btn hud-back" id="closeSelfieBtn" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+
+      <div class="hud-indicator">
+        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" />
+          <line x1="3" y1="21" x2="21" y2="3" />
+        </svg>
+        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M10 9l5 3-5 3V9Z" />
+          <line x1="4" y1="20" x2="20" y2="4" />
+        </svg>
+        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+          <line x1="3" y1="3" x2="21" y2="21" />
+        </svg>
+      </div>
+
+      <div class="hud-quick-row">
+        <div class="selfie-mode-pill">
+          <button class="selfie-mode-btn" aria-label="그룹 셀피">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              <path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              <path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6" />
+              <path d="M13 14.5c3.2.5 5 2.6 5 5.5" />
+            </svg>
+          </button>
+          <button class="selfie-mode-btn is-active" aria-label="개인 셀피">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+            </svg>
+          </button>
+        </div>
+        <button class="icon-btn" id="moreOptionsBtn" aria-label="더보기">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="8" cy="7" r="1.6" /><circle cx="16" cy="7" r="1.6" />
+            <circle cx="8" cy="12" r="1.6" /><circle cx="16" cy="12" r="1.6" />
+            <circle cx="8" cy="17" r="1.6" /><circle cx="16" cy="17" r="1.6" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="hud-shutter-row">
+        <span class="gallery-thumb" aria-hidden="true"></span>
+        <button class="shutter-btn" id="frontShutterBtn" aria-label="촬영"></button>
+        <button class="icon-btn" id="flipFromFrontBtn" aria-label="카메라 전환">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h11l-3-3" />
+            <path d="M20 17H9l3 3" />
+            <path d="M4 7a8 8 0 0 0 8 8" />
+            <path d="M20 17a8 8 0 0 0-8-8" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="hud-mode-list">
+        <span class="mode-item">PORTRAIT</span>
+        <span class="mode-item is-active">PHOTO</span>
+        <span class="mode-item">VIDEO</span>
+        <span class="mode-item">MORE</span>
+      </div>
+    </section>
+
+    <!-- 촬영 결과 — 갤러리 UI -->
+    <section class="screen gallery-screen" id="screen-gallery" hidden>
+      <img id="resultImage" alt="촬영된 셀피" />
+
+      <div class="gallery-topbar">
+        <button class="gallery-back" id="closeGalleryBtn" aria-label="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <div class="gallery-iconrow">
+          <button class="icon-btn-light" aria-label="복원 보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 3v5h5" /></svg>
+          </button>
+          <button class="icon-btn-light" aria-label="미리보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+          </button>
+          <button class="icon-btn-light" aria-label="더보기">
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="gallery-bottombar">
+        <button class="gallery-action" aria-label="좋아요">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" /></svg>
+        </button>
+        <button class="gallery-action" aria-label="편집">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+        </button>
+        <a class="gallery-action gallery-action--primary" id="downloadLink" download="palm-selfie.png" aria-label="다운로드">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
+        </a>
+        <button class="gallery-action" aria-label="공유">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6" /><circle cx="6" cy="12" r="2.6" /><circle cx="18" cy="19" r="2.6" /><path d="M8.3 10.7l7.4-4.2M8.3 13.3l7.4 4.2" /></svg>
+        </button>
+        <button class="gallery-action" id="retakeFromGalleryBtn" aria-label="삭제하고 다시 찍기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13h10l1-13" /></svg>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9";
+
+    const el = (id) => document.getElementById(id);
+    const COUNTDOWN_STEPS = [3, 2, 1];
+    const HAND_HOLD_MS = 300; // 이 시간 이상 손이 잡혀있으면 카운트다운 시작
+
+    let stream = null;
+    let handLandmarker = null;
+    let handWatchActive = false;
+    let countdownRunning = false;
+    let handPresentSince = null;
+    let resultImageUrl = null;
+
+    function showScreen(id){
+      document.querySelectorAll(".screen").forEach(s => s.hidden = (s.id !== id));
+    }
+
+    async function openCamera(facingMode, videoEl){
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (e1) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } catch (e2) {
+          alert("카메라 권한을 확인해주세요. (" + e2.message + ")");
+          showScreen("screen-intro");
+          return false;
+        }
+      }
+      videoEl.srcObject = stream;
+      return true;
+    }
+
+    function closeCamera(){
+      stopHandWatch();
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      showScreen("screen-intro");
+    }
+
+    /* ---------------- 손 인식 (MediaPipe HandLandmarker) ---------------- */
+
+    async function ensureHandLandmarker(){
+      if (handLandmarker) return;
+      const filesetResolver = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
+      );
+      handLandmarker = await HandLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+          delegate: "CPU"
+        },
+        runningMode: "VIDEO",
+        numHands: 1
+      });
+    }
+
+    function resizeHandBoxCanvas(){
+      const canvas = el("handBoxCanvas");
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    }
+
+    function clearHandBox(){
+      const canvas = el("handBoxCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    /*
+     * "손바닥 전체가 깔끔하게 보이는지" 판단 — MediaPipe는 palm/back 여부를 직접 알려주지 않으므로,
+     * 엄지를 포함한 다섯 손가락이 전부 쭉 펴져 있는지(주먹·일부 가려짐이 아닌 활짝 편 손)로 근사한다.
+     */
+    function isCleanPalm(landmarks){
+      const wrist = landmarks[0];
+      const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+      const fingers = [
+        { tip: 8, mcp: 5 },   // 검지
+        { tip: 12, mcp: 9 },  // 중지
+        { tip: 16, mcp: 13 }, // 약지
+        { tip: 20, mcp: 17 }  // 소지
+      ];
+      const extendedCount = fingers.filter(
+        (f) => dist(landmarks[f.tip], wrist) > dist(landmarks[f.mcp], wrist) * 1.3
+      ).length;
+
+      const thumbExtended = dist(landmarks[4], wrist) > dist(landmarks[2], wrist) * 1.2;
+
+      return extendedCount >= 4 && thumbExtended;
+    }
+
+    /* 손 랜드마크(정규화 0~1 좌표)를 거울모드(object-fit:cover) 캔버스 좌표의 정사각형 박스로 변환한다 */
+    function computeHandBox(landmarks, videoW, videoH, boxW, boxH){
+      let minX = 1, maxX = 0, minY = 1, maxY = 0;
+      landmarks.forEach((p) => {
+        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+      });
+
+      const scale = Math.max(boxW / videoW, boxH / videoH);
+      const offsetX = (boxW - videoW * scale) / 2;
+      const offsetY = (boxH - videoH * scale) / 2;
+      const toPx = (nx, ny) => ({ x: nx * videoW * scale + offsetX, y: ny * videoH * scale + offsetY });
+      const tl = toPx(minX, minY), br = toPx(maxX, maxY);
+
+      const pad = 1.25;
+      const w = (br.x - tl.x) * pad;
+      const h = (br.y - tl.y) * pad;
+      const size = Math.max(w, h);
+      const cx = (tl.x + br.x) / 2;
+      const cy = (tl.y + br.y) / 2;
+      let x = cx - size / 2;
+      const y = cy - size / 2;
+      x = boxW - (x + size); // 영상이 거울모드(CSS 반전)이므로 박스도 좌우 반전
+
+      return { x, y, size };
+    }
+
+    function drawHandBox(box){
+      const canvas = el("handBoxCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#FFD400";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.size, box.size);
+    }
+
+    async function startHandWatch(){
+      try { await ensureHandLandmarker(); }
+      catch (e) { return; } // 모델을 못 불러와도 수동 셔터로는 계속 촬영 가능
+
+      handWatchActive = true;
+      handPresentSince = null;
+      resizeHandBoxCanvas();
+      const video = el("camVideoFront");
+
+      function loop(){
+        if (!handWatchActive) return;
+        if (video.readyState >= 2 && !countdownRunning) {
+          const result = handLandmarker.detectForVideo(video, performance.now());
+          const landmarksList = result.landmarks || [];
+          const landmarks = landmarksList[0];
+
+          const canvas = el("handBoxCanvas");
+          const box = landmarks
+            ? computeHandBox(landmarks, video.videoWidth, video.videoHeight, canvas.width, canvas.height)
+            : null;
+          const minSize = Math.min(canvas.width, canvas.height) * 0.22;
+          const clean = !!(landmarks && box && box.size >= minSize && isCleanPalm(landmarks));
+
+          if (clean) {
+            el("handHint").hidden = true;
+            const now = performance.now();
+            if (handPresentSince == null) handPresentSince = now;
+            drawHandBox(box);
+
+            if (now - handPresentSince >= HAND_HOLD_MS) {
+              handPresentSince = null;
+              clearHandBox();
+              startCountdown();
+            }
+          } else {
+            handPresentSince = null;
+            clearHandBox();
+            el("handHint").textContent = landmarks
+              ? "손바닥 전체가 보이도록 펴서 가까이 대주세요"
+              : "손바닥을 화면에 비춰보세요";
+            el("handHint").hidden = false;
+          }
+        }
+        if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);
+        else requestAnimationFrame(loop);
+      }
+
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);
+      else requestAnimationFrame(loop);
+    }
+
+    function stopHandWatch(){
+      handWatchActive = false;
+      countdownRunning = false;
+      handPresentSince = null;
+      if (countdownTimerId) { clearTimeout(countdownTimerId); countdownTimerId = null; }
+      clearHandBox();
+      el("countdownOverlay").hidden = true;
+      el("handHint").textContent = "손바닥을 화면에 비춰보세요";
+      el("handHint").hidden = false;
+    }
+
+    let countdownTimerId = null;
+
+    /* 카운트다운이 시작되면 손이 화면에서 사라져도 끝까지 진행해 촬영한다 */
+    function startCountdown(){
+      countdownRunning = true;
+      el("countdownOverlay").hidden = false;
+      let i = 0;
+
+      function tick(){
+        el("countdownNumber").textContent = COUNTDOWN_STEPS[i];
+        i++;
+        if (i < COUNTDOWN_STEPS.length) {
+          countdownTimerId = setTimeout(tick, 800);
+        } else {
+          countdownTimerId = setTimeout(() => capturePhoto(), 800);
+        }
+      }
+      tick();
+    }
+
+    /* ---------------- 촬영 → 갤러리 ---------------- */
+
+    function capturePhoto(){
+      countdownRunning = false;
+      el("countdownOverlay").hidden = true;
+      stopHandWatch();
+
+      const video = el("camVideoFront");
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      // 전면 카메라는 좌우 반전된 화면이 익숙하므로 캡처본도 거울 모드로 저장
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      if (resultImageUrl) URL.revokeObjectURL(resultImageUrl);
+      canvas.toBlob((blob) => {
+        resultImageUrl = URL.createObjectURL(blob);
+        el("resultImage").src = resultImageUrl;
+        el("downloadLink").href = resultImageUrl;
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        showScreen("screen-gallery");
+      }, "image/png");
+    }
+
+    el("startBtn").onclick = async () => {
+      showScreen("screen-camera");
+      await openCamera("environment", el("camVideoRear"));
+    };
+
+    el("closeCameraBtn").onclick = () => closeCamera();
+    el("closeSelfieBtn").onclick = () => closeCamera();
+    el("closeGalleryBtn").onclick = () => showScreen("screen-intro");
+
+    el("flipFromRearBtn").onclick = async () => {
+      showScreen("screen-selfie");
+      await openCamera("user", el("camVideoFront"));
+      startHandWatch();
+    };
+
+    el("flipFromFrontBtn").onclick = async () => {
+      stopHandWatch();
+      showScreen("screen-camera");
+      await openCamera("environment", el("camVideoRear"));
+    };
+
+    /* Camera HUD(후면)에서 셔터를 누르면 Selfie HUD(전면)로 전환 */
+    el("rearShutterBtn").onclick = async () => {
+      showScreen("screen-selfie");
+      await openCamera("user", el("camVideoFront"));
+      startHandWatch();
+    };
+
+    /* Selfie HUD의 셔터는 손 인식 없이 바로 촬영하는 수동 보조 수단 */
+    el("frontShutterBtn").onclick = () => {
+      if (stream) capturePhoto();
+    };
+
+    el("retakeFromGalleryBtn").onclick = async () => {
+      showScreen("screen-selfie");
+      await openCamera("user", el("camVideoFront"));
+      startHandWatch();
+    };
+  </script>
+</body>
+</html>

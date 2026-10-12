@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <mask id="ringHole">
+      <rect x="0" y="0" width="120" height="120" fill="#ffffff" />
+      <circle cx="60" cy="60" r="34" fill="#000000" />
+    </mask>
+  </defs>
+  <circle cx="60" cy="60" r="50" fill="#d8b568" mask="url(#ringHole)" />
+  <circle cx="60" cy="18" r="8" fill="#ffffff" stroke="#c9a654" stroke-width="2" />
+</svg>

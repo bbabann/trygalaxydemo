@@ -215,7 +215,7 @@
       if (stream) stream.getTracks().forEach(t => t.stop());
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 }, aspectRatio: { ideal: 16 / 9 } },
           audio: false
         });
       } catch (e1) {
@@ -435,7 +435,7 @@
     function computeCropRect(box, vw, vh, outAspect){
       const cx = box.x + box.w / 2;
       const cy = box.y + box.h / 2;
-      let cropH = Math.min(vh, box.h * 3.4);
+      let cropH = Math.min(vh, box.h * 4.6);
       let cropW = cropH * outAspect;
       if (cropW > vw){ cropW = vw; cropH = cropW / outAspect; }
       let x0 = cx - cropW / 2;

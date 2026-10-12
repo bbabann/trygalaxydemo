@@ -21,58 +21,6 @@
     </div>
 
     <!-- Camera HUD — 후면 카메라, Photo 모드 -->
-    <section class="screen photo-hud" id="screen-camera" hidden>
-      <video id="camVideoRear" autoplay muted playsinline webkit-playsinline></video>
-
-      <button class="icon-btn hud-back" id="closeCameraBtn" aria-label="닫기">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <line x1="6" y1="6" x2="18" y2="18" />
-          <line x1="18" y1="6" x2="6" y2="18" />
-        </svg>
-      </button>
-
-      <div class="hud-indicator">
-        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" />
-          <line x1="3" y1="21" x2="21" y2="3" />
-        </svg>
-        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M10 9l5 3-5 3V9Z" />
-          <line x1="4" y1="20" x2="20" y2="4" />
-        </svg>
-        <span class="hud-indicator-text">12M</span>
-        <svg class="hud-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
-          <line x1="3" y1="3" x2="21" y2="21" />
-        </svg>
-      </div>
-
-      <div class="hud-quick-row">
-        <span class="zoom-badge">1x</span>
-      </div>
-
-      <div class="hud-shutter-row">
-        <span class="gallery-thumb" aria-hidden="true"></span>
-        <button class="shutter-btn" id="rearShutterBtn" aria-label="촬영"></button>
-        <button class="icon-btn" id="flipFromRearBtn" aria-label="카메라 전환">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 7h11l-3-3" />
-            <path d="M20 17H9l3 3" />
-            <path d="M4 7a8 8 0 0 0 8 8" />
-            <path d="M20 17a8 8 0 0 0-8-8" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="hud-mode-list">
-        <span class="mode-item">PORTRAIT</span>
-        <span class="mode-item is-active">PHOTO</span>
-        <span class="mode-item">VIDEO</span>
-        <span class="mode-item">MORE</span>
-      </div>
-    </section>
-
     <!-- Selfie HUD — 전면 카메라, Photo 모드 -->
     <section class="screen photo-hud" id="screen-selfie" hidden>
       <video id="camVideoFront" autoplay muted playsinline webkit-playsinline></video>
@@ -137,14 +85,7 @@
       <div class="hud-shutter-row">
         <span class="gallery-thumb" aria-hidden="true"></span>
         <button class="shutter-btn" id="frontShutterBtn" aria-label="촬영"></button>
-        <button class="icon-btn" id="flipFromFrontBtn" aria-label="카메라 전환">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 7h11l-3-3" />
-            <path d="M20 17H9l3 3" />
-            <path d="M4 7a8 8 0 0 0 8 8" />
-            <path d="M20 17a8 8 0 0 0-8-8" />
-          </svg>
-        </button>
+        <span class="icon-btn" aria-hidden="true"></span>
       </div>
 
       <div class="hud-mode-list">
@@ -438,32 +379,13 @@
     }
 
     el("startBtn").onclick = async () => {
-      showScreen("screen-camera");
-      await openCamera("environment", el("camVideoRear"));
+      showScreen("screen-selfie");
+      await openCamera("user", el("camVideoFront"));
+      startHandWatch();
     };
 
-    el("closeCameraBtn").onclick = () => closeCamera();
     el("closeSelfieBtn").onclick = () => closeCamera();
     el("closeGalleryBtn").onclick = () => showScreen("screen-intro");
-
-    el("flipFromRearBtn").onclick = async () => {
-      showScreen("screen-selfie");
-      await openCamera("user", el("camVideoFront"));
-      startHandWatch();
-    };
-
-    el("flipFromFrontBtn").onclick = async () => {
-      stopHandWatch();
-      showScreen("screen-camera");
-      await openCamera("environment", el("camVideoRear"));
-    };
-
-    /* Camera HUD(후면)에서 셔터를 누르면 Selfie HUD(전면)로 전환 */
-    el("rearShutterBtn").onclick = async () => {
-      showScreen("screen-selfie");
-      await openCamera("user", el("camVideoFront"));
-      startHandWatch();
-    };
 
     /* Selfie HUD의 셔터는 손 인식 없이 바로 촬영하는 수동 보조 수단 */
     el("frontShutterBtn").onclick = () => {

@@ -32,8 +32,8 @@ const EXPERIENCES = [
   },
   {
     id: "exp6",
-    title: "체험 6",
-    description: "체험 6에 대한 간단한 설명을 적어주세요.",
+    title: "Super Steady",
+    description: "같은 장면을 찍은 Others와 Galaxy 영상이 가로 폰 두 대에서 동시에 재생됩니다. 탭해서 번갈아 크게 비교해보세요.",
     link: "experiences/exp6.html",
   },
 ];

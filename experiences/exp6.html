@@ -3,17 +3,197 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>체험 6 | Try Galaxy Demo</title>
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  <title>Super Steady | Try Galaxy Demo</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/supersteady.css" />
 </head>
 <body>
   <div class="app-frame">
     <div class="experience-page">
-    <h1>체험 6</h1>
-    <p>이곳에 체험 6의 콘텐츠(이미지, 영상, 인터랙션 등)를 구성하세요.</p>
-    <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+      <section class="screen" id="screen-intro">
+        <h1>Super Steady</h1>
+        <p class="hint">같은 장면을 촬영한 두 영상이 위아래 폰에서 동시에 재생됩니다. 화면을 탭하면 Others와 Galaxy가 번갈아 크게 보여, 흔들림 보정 차이를 바로 비교할 수 있습니다.</p>
+        <button class="btn btn-primary" id="startBtn">시작하기</button>
+        <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+      </section>
     </div>
+
+    <section class="screen splitview-screen" id="screen-splitview" hidden>
+      <button class="splitview-back" id="closeSplitBtn" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+
+      <div class="stage" id="stage">
+        <div class="panel panel--top" data-role="active" id="panelTop">
+          <div class="ss-device">
+            <span class="ss-pill">Others</span>
+            <div class="ss-frame others">
+              <div class="ss-screen">
+                <div class="ss-notch"></div>
+                <video id="videoTop" src="../assets/video/supersteady/others.mov" muted playsinline webkit-playsinline preload="auto"></video>
+                <p class="ss-missing" id="missingTop" hidden>영상 파일이 없습니다<br />assets/video/supersteady/others.mov</p>
+              </div>
+            </div>
+            <p class="ss-caption">Others</p>
+          </div>
+        </div>
+        <div class="panel panel--bottom" data-role="rest" id="panelBottom">
+          <div class="ss-device">
+            <span class="ss-pill">Galaxy</span>
+            <div class="ss-frame galaxy">
+              <div class="ss-screen">
+                <div class="ss-notch"></div>
+                <video id="videoBottom" src="../assets/video/supersteady/galaxy.mov" muted playsinline webkit-playsinline preload="auto"></video>
+                <p class="ss-missing" id="missingBottom" hidden>영상 파일이 없습니다<br />assets/video/supersteady/galaxy.mov</p>
+              </div>
+            </div>
+            <p class="ss-caption">Galaxy</p>
+          </div>
+          <span class="ss-hint">화면을 탭해보세요</span>
+        </div>
+
+        <div class="ss-resize-handle" id="ssResizeHandle" aria-label="두 화면 비율 드래그로 조절"></div>
+      </div>
+    </section>
   </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+
+    function showScreen(id){
+      document.querySelectorAll(".screen").forEach(s => s.hidden = (s.id !== id));
+    }
+
+    const stage = el("stage");
+    const panelTop = el("panelTop");
+    const panelBottom = el("panelBottom");
+    const videos = [el("videoTop"), el("videoBottom")];
+
+    let active = "top";
+
+    /* 위 패널 비율(%) — 탭하면 66.667/33.333으로 스냅되고, 핸들을 드래그하면 자유롭게 바뀐다 */
+    const MIN_RATIO = 18;
+    const MAX_RATIO = 82;
+
+    function setSplitRatio(topPercent){
+      const p = Math.max(MIN_RATIO, Math.min(MAX_RATIO, topPercent));
+      panelTop.style.flexBasis = p + "%";
+      panelBottom.style.flexBasis = (100 - p) + "%";
+      el("ssResizeHandle").style.top = p + "%";
+      return p;
+    }
+
+    /* 드래그 중 비율에 비례해 폰 크기·배경·pill 색을 연속적으로 보간 */
+    const REST_SCALE = 0.55;
+    const ACTIVE_SCALE = 1.3;
+    const COLOR = {
+      background: [255, 255, 255],
+      muted: [245, 245, 245],
+      foreground: [10, 10, 10],
+      mutedForeground: [115, 115, 115],
+    };
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const lerpColor = (c1, c2, t) =>
+      `rgb(${Math.round(lerp(c1[0], c2[0], t))}, ${Math.round(lerp(c1[1], c2[1], t))}, ${Math.round(lerp(c1[2], c2[2], t))})`;
+
+    function applyDragVisual(topPercent){
+      const tTop = (topPercent - MIN_RATIO) / (MAX_RATIO - MIN_RATIO);
+      const tBottom = 1 - tTop;
+      [{ panel: panelTop, t: tTop }, { panel: panelBottom, t: tBottom }].forEach(({ panel, t }) => {
+        panel.querySelector(".ss-device").style.transform = `scale(${lerp(REST_SCALE, ACTIVE_SCALE, t)})`;
+        panel.style.backgroundColor = lerpColor(COLOR.muted, COLOR.background, t);
+        const pill = panel.querySelector(".ss-pill");
+        pill.style.backgroundColor = lerpColor(COLOR.muted, COLOR.foreground, t);
+        pill.style.color = lerpColor(COLOR.mutedForeground, COLOR.background, t);
+      });
+    }
+
+    function clearDragOverrides(){
+      [panelTop, panelBottom].forEach((panel) => {
+        panel.style.backgroundColor = "";
+        panel.querySelector(".ss-device").style.transform = "";
+        const pill = panel.querySelector(".ss-pill");
+        pill.style.backgroundColor = "";
+        pill.style.color = "";
+      });
+    }
+
+    function setActive(side){
+      active = side;
+      clearDragOverrides();
+      panelTop.dataset.role = side === "top" ? "active" : "rest";
+      panelBottom.dataset.role = side === "bottom" ? "active" : "rest";
+      setSplitRatio(side === "top" ? 66.667 : 33.333);
+    }
+
+    /* 두 영상을 같은 시점에서 동시에 재생 (비교용) */
+    function playBoth(){
+      videos.forEach((v) => {
+        try { v.currentTime = 0; } catch (e) { /* 아직 메타데이터 없음 */ }
+        const p = v.play();
+        if (p && p.catch) p.catch(() => { /* 자동재생 차단 시 탭하면 재생됨 */ });
+      });
+    }
+
+    // 길이가 다른 두 영상이 어긋나지 않도록, 어느 한쪽이 끝나면 둘 다 처음부터 다시 재생
+    videos.forEach((v) => v.addEventListener("ended", () => { if (!el("screen-splitview").hidden) playBoth(); }));
+
+    function stopBoth(){
+      videos.forEach((v) => { v.pause(); });
+    }
+
+    // 영상 파일이 없거나 못 읽으면 폰 화면에 안내 표시 (리스너 등록 전에 이미 실패한 경우도 반영)
+    [["videoTop", "missingTop"], ["videoBottom", "missingBottom"]].forEach(([vid, msg]) => {
+      const v = el(vid);
+      const show = () => { el(msg).hidden = false; };
+      v.addEventListener("error", show);
+      if (v.error) show();
+    });
+
+    stage.addEventListener("click", () => {
+      setActive(active === "top" ? "bottom" : "top");
+      // 자동재생이 막혀 멈춰 있던 영상이 있으면 탭을 계기로 재생
+      videos.forEach((v) => { if (v.paused && !v.error) v.play().catch(() => {}); });
+    });
+
+    el("startBtn").onclick = () => {
+      setActive("top");
+      showScreen("screen-splitview");
+      playBoth();
+    };
+
+    el("closeSplitBtn").onclick = (e) => {
+      e.stopPropagation();
+      stopBoth();
+      showScreen("screen-intro");
+    };
+
+    /* 경계선 핸들 드래그 */
+    const resizeHandle = el("ssResizeHandle");
+    resizeHandle.addEventListener("click", (e) => e.stopPropagation());
+    resizeHandle.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      resizeHandle.setPointerCapture(e.pointerId);
+      stage.classList.add("is-dragging");
+      const onMove = (ev) => {
+        const stageRect = stage.getBoundingClientRect();
+        const percent = ((ev.clientY - stageRect.top) / stageRect.height) * 100;
+        applyDragVisual(setSplitRatio(percent));
+      };
+      const onUp = () => {
+        stage.classList.remove("is-dragging");
+        resizeHandle.releasePointerCapture(e.pointerId);
+        resizeHandle.removeEventListener("pointermove", onMove);
+        resizeHandle.removeEventListener("pointerup", onUp);
+      };
+      resizeHandle.addEventListener("pointermove", onMove);
+      resizeHandle.addEventListener("pointerup", onUp);
+    });
+  </script>
 </body>
 </html>

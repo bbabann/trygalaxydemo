@@ -42,7 +42,7 @@
   opacity: 0.88;
 }
 
-/* ---------------- 홈스크린 목업 — 특수 케이스: 배경 월페이퍼에 한해 그라데이션 사용 허용 ---------------- */
+/* ---------------- 홈스크린 목업 — Figma(One UI Basic/1st Homescreen_morning) 기준 ---------------- */
 
 .privacy-screen {
   position: absolute;
@@ -51,10 +51,16 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(120% 90% at 30% 15%, #cbb8ef 0%, rgba(203, 184, 239, 0) 55%),
-    radial-gradient(120% 90% at 75% 80%, #8f6fe0 0%, rgba(143, 111, 224, 0) 55%),
-    linear-gradient(160deg, #d9c9f2 0%, #9f7fe8 55%, #6a4fc2 100%);
+  background: #b9a2e8;
+}
+
+.wallpaper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: max(840px, 100%);
+  background: url("../img/privacy/wallpaper.jpg") center top / cover no-repeat;
 }
 
 .home-back {
@@ -80,144 +86,256 @@
   height: 20px;
 }
 
-.home-content {
+/* 아래 좌표는 모두 Figma 360x780 프레임 기준 px */
+.abs {
   position: absolute;
-  inset: 0;
-  padding: 72px 20px 110px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: block;
+  max-width: none;
 }
 
-.widget-row {
-  display: flex;
-  gap: 10px;
+.home-stage {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 360px;
+  height: 585px;
+  transform: translateX(-50%) scale(var(--s, 1));
+  transform-origin: top center;
+  font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system, sans-serif;
+}
+
+.widget-area {
+  position: absolute;
+  top: 184px;
+  left: 24px;
+  width: 312px;
+  height: 165px;
 }
 
 .widget-weather {
-  flex: 1.3;
-  background: rgba(60, 110, 200, 0.55);
-  border-radius: 20px;
-  padding: 14px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 144px;
+  height: 165px;
+  overflow: hidden;
+  color: #fcfcff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg preserveAspectRatio=%22none%22 overflow=%22visible%22 style=%22display: block%3B%22 width=%22144%22 height=%22165%22 viewBox=%220 0 144 165%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg id=%22Group%22%3E%3Cpath id=%22Vector%22 d=%22M32.5764 0L111.424 0C122.751 0 126.859 1.17817 131 3.39053C135.141 5.60289 138.391 8.84944 140.606 12.9862C142.821 17.1229 144 21.2262 144 32.5416V132.458C144 143.774 142.821 147.877 140.606 152.014C138.391 156.151 135.141 159.397 131 161.609C126.859 163.822 122.751 165 111.424 165H32.5764C21.2489 165 17.1413 163.822 13.0001 161.609C8.8589 159.397 5.60888 156.151 3.39416 152.014C1.17943 147.877 0 143.774 0 132.458L0 32.5416C0 21.2262 1.17943 17.1229 3.39416 12.9862C5.60888 8.84944 8.8589 5.60289 13.0001 3.39053C17.1413 1.17817 21.2489 0 32.5764 0Z%22 fill=%22white%22/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg preserveAspectRatio=%22none%22 overflow=%22visible%22 style=%22display: block%3B%22 width=%22144%22 height=%22165%22 viewBox=%220 0 144 165%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg id=%22Group%22%3E%3Cpath id=%22Vector%22 d=%22M32.5764 0L111.424 0C122.751 0 126.859 1.17817 131 3.39053C135.141 5.60289 138.391 8.84944 140.606 12.9862C142.821 17.1229 144 21.2262 144 32.5416V132.458C144 143.774 142.821 147.877 140.606 152.014C138.391 156.151 135.141 159.397 131 161.609C126.859 163.822 122.751 165 111.424 165H32.5764C21.2489 165 17.1413 163.822 13.0001 161.609C8.8589 159.397 5.60888 156.151 3.39416 152.014C1.17943 147.877 0 143.774 0 132.458L0 32.5416C0 21.2262 1.17943 17.1229 3.39416 12.9862C5.60888 8.84944 8.8589 5.60289 13.0001 3.39053C17.1413 1.17817 21.2489 0 32.5764 0Z%22 fill=%22white%22/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+}
+
+.w-text {
+  position: absolute;
+  left: 14px;
+  top: 73px;
+  width: 103px;
+  height: 78px;
+}
+
+.w-text p {
+  position: absolute;
   text-align: left;
-  color: #fff;
-}
-
-.widget-weather .deg {
-  font-size: 26px;
-  font-weight: 700;
-}
-
-.widget-weather .desc {
+  left: 0;
+  right: 0;
+  margin: 0;
+  line-height: normal;
   font-size: 12px;
-  opacity: 0.9;
-  margin-top: 2px;
+  white-space: pre;
 }
 
-.widget-mini {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.w-deg { top: 0; font-size: 21px !important; }
+.w-desc1 { top: 26px; }
+.w-desc2 { top: 44px; }
+.w-loc { top: 62px; opacity: 0.7; }
+
+.widget-col {
+  position: absolute;
+  left: 168px;
+  top: 0;
+  width: 144px;
+  height: 165px;
 }
 
-.pill-card {
-  background: rgba(255, 255, 255, 0.85);
+.widget-oobe {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 144px;
+  height: 68px;
+}
+
+.oobe-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 113px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 15.1px;
+  font-weight: 600;
+  color: #000;
+}
+
+.widget-oobe .abs { inset: 0; width: 100%; height: 100%; border-radius: 999px; }
+
+.widget-health {
+  position: absolute;
+  left: 0;
+  top: 91px;
+  width: 144px;
+  height: 68px;
+}
+
+.h-blur {
+  inset: 4.41% 0;
   border-radius: 999px;
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #1a1a1a;
+  background: rgba(242, 242, 242, 0.18);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
 }
 
-.ring-card {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 16px;
-  padding: 8px 10px;
+.h-bg {
+  inset: 0;
+  border-radius: 1014px;
+  background: rgba(252, 252, 255, 0.75);
+  border: 0.5px solid rgba(252, 252, 255, 0.2);
+}
+
+.hw-t {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: normal;
+  color: #010102;
+  white-space: nowrap;
+}
+
+.google-bar {
+  position: absolute;
+  top: 361px;
+  left: 0;
+  width: 360px;
+  height: 112px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #333;
 }
 
-.search-bar {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 999px;
+.google-bar-inner {
+  width: 100%;
+  background: #fff;
+  opacity: 0.9;
+  border-radius: 33px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #666;
+  justify-content: space-between;
 }
 
-.search-bar svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
+.g-logo { width: 28.064px; height: 28.636px; margin: 1.68px 1.57px 1.68px 2.37px; }
+.g-actions { display: flex; align-items: center; gap: 12px; }
+.g-voice { width: 17.529px; height: 25.432px; margin: 3.3px 7.2px; }
+.g-lens { width: 32px; height: 32px; }
 
-.app-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  margin-top: 8px;
-}
-
-.app-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.app-icon .glyph {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
-
-.app-icon .glyph svg {
-  width: 24px;
-  height: 24px;
-}
-
-.app-icon span {
-  font-size: 10px;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.dock {
+.app-row {
   position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 24px;
+  top: 481px;
+  left: 16px;
+  width: 328px;
   display: flex;
   justify-content: space-between;
 }
 
-.dock .glyph {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+.app-container {
+  width: 80px;
+  height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-ic { width: 60px; height: 60px; }
+
+.app-label {
+  font-size: 12px;
+  line-height: normal;
+  color: #fff;
+  text-align: center;
+}
+
+.home-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 360px;
+  height: 195px;
+  transform: translateX(-50%) scale(var(--s, 1));
+  transform-origin: bottom center;
+}
+
+.page-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 49px;
+  padding: 16px 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  gap: 3px;
 }
 
-.dock .glyph svg {
-  width: 24px;
-  height: 24px;
+.page-indicator > * { width: 17px; height: 17px; display: block; position: relative; }
+.pi-unsel i {
+  position: absolute;
+  left: 29.41%;
+  right: 29.41%;
+  height: 8.82%;
+  min-height: 1.5px;
+  background: #fff;
+  opacity: 0.65;
+  border-radius: 0.5px;
 }
+.pi-unsel i:nth-child(1) { top: 32.35%; }
+.pi-unsel i:nth-child(2) { top: 58.82%; }
+.pi-dot img { position: absolute; inset: 29.41%; width: 41.18%; height: 41.18%; }
+
+.dock {
+  position: absolute;
+  left: 16px;
+  top: 49px;
+  width: 328px;
+  height: 92px;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.dock img { width: 60px; height: 60px; margin: 0 10px; display: block; }
+
+/* 마스크는 file:// 로 열어도 동작하도록 data URI로 인라인합니다.
+   아이콘 이미지는 스크린샷이라 모서리에 배경이 같이 찍혀 있어서 아이콘 모양으로 잘라냅니다 */
+.dock img,
+.app-ic {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg preserveAspectRatio=%22none%22 overflow=%22visible%22 style=%22display: block%3B%22 width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg id=%22App icons%22%3E%3Cpath id=%22container%22 fill-rule=%22evenodd%22 clip-rule=%22evenodd%22 d=%22M7.02833 6.66667C12.5312 1.125 20.7796 0 30 0C39.2208 0 47.4692 1.125 52.9721 6.66667C57.3579 11.0833 60 18.3058 60 30C60 41.6942 57.3575 48.9167 52.9713 53.3338C47.4683 58.8746 39.2204 60 30 60C20.7804 60 12.5321 58.8746 7.02917 53.3338C2.6425 48.9167 1.43051e-06 41.6942 1.43051e-06 30C1.43051e-06 18.3058 2.64208 11.0837 7.02833 6.66667Z%22 fill=%22url%28%23paint0_linear_393_14615%29%22/%3E%3Cpath id=%22Vector 921%22 d=%22M6.30197 6.21037L53 52.9084%22 stroke=%22%23404040%22 stroke-opacity=%220.2%22/%3E%3Cpath id=%22Vector 922%22 d=%22M52.9191 6.21037L6.2211 52.9084%22 stroke=%22%23404040%22 stroke-opacity=%220.2%22/%3E%3Ccircle id=%22Ellipse 1496%22 cx=%2230%22 cy=%2230%22 r=%2220.5%22 stroke=%22%23404040%22 stroke-opacity=%220.2%22/%3E%3C/g%3E%3Cdefs%3E%3ClinearGradient id=%22paint0_linear_393_14615%22 x1=%2230%22 y1=%220%22 x2=%2230%22 y2=%2260%22 gradientUnits=%22userSpaceOnUse%22%3E%3Cstop stop-color=%22white%22/%3E%3Cstop offset=%221%22 stop-color=%22%23868E9C%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg preserveAspectRatio=%22none%22 overflow=%22visible%22 style=%22display: block%3B%22 width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg id=%22App icons%22%3E%3Cpath id=%22container%22 fill-rule=%22evenodd%22 clip-rule=%22evenodd%22 d=%22M7.02833 6.66667C12.5312 1.125 20.7796 0 30 0C39.2208 0 47.4692 1.125 52.9721 6.66667C57.3579 11.0833 60 18.3058 60 30C60 41.6942 57.3575 48.9167 52.9713 53.3338C47.4683 58.8746 39.2204 60 30 60C20.7804 60 12.5321 58.8746 7.02917 53.3338C2.6425 48.9167 1.43051e-06 41.6942 1.43051e-06 30C1.43051e-06 18.3058 2.64208 11.0837 7.02833 6.66667Z%22 fill=%22url%28%23paint0_linear_393_14615%29%22/%3E%3Cpath id=%22Vector 921%22 d=%22M6.30197 6.21037L53 52.9084%22 stroke=%22%23404040%22 stroke-opacity=%220.2%22/%3E%3Cpath id=%22Vector 922%22 d=%22M52.9191 6.21037L6.2211 52.9084%22 stroke=%22%23404040%22 stroke-opacity=%220.2%22/%3E%3Ccircle id=%22Ellipse 1496%22 cx=%2230%22 cy=%2230%22 r=%2220.5%22 stroke=%22%23404040%22 stroke-opacity=%220.2%22/%3E%3C/g%3E%3Cdefs%3E%3ClinearGradient id=%22paint0_linear_393_14615%22 x1=%2230%22 y1=%220%22 x2=%2230%22 y2=%2260%22 gradientUnits=%22userSpaceOnUse%22%3E%3Cstop stop-color=%22white%22/%3E%3Cstop offset=%221%22 stop-color=%22%23868E9C%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+
+.bottom-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 141px;
+  height: 54px;
+  padding: 12px 68px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.bottom-nav img { width: 22px; height: 22px; display: block; }
 
 /* ---------------- 기울기 오버레이 ---------------- */
 

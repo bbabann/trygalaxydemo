@@ -130,27 +130,48 @@
 .panel[data-role="active"] .ss-device { transform: scale(1.4); }
 .panel[data-role="rest"] .ss-device { transform: scale(0.55); }
 
+/* 기기 프레임 이미지(투명 PNG) 위에 화면 캡처를 구멍 위치에 맞춰 깔아줌 */
 .ss-frame {
-  width: 112px;
+  position: relative;
   height: 243px;
-  border-radius: 15px;
-  background: var(--foreground);
-  padding: 5px;
-  box-shadow: 0 18px 32px -16px rgba(0, 0, 0, 0.25);
+  aspect-ratio: 2201 / 4509;
 }
 
-.ss-frame.ios { border-radius: 16px; }
+.ss-frame.galaxy {
+  aspect-ratio: 2310 / 4814;
+}
 
-.ss-screen {
-  position: relative;
+.ss-frame-img {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   width: 100%;
   height: 100%;
-  border-radius: 11px;
-  background: var(--background);
-  overflow: hidden;
+  display: block;
+  pointer-events: none;
 }
 
-.ss-frame.ios .ss-screen { border-radius: 13px; }
+.ss-screen {
+  position: absolute;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.ss-frame.ios .ss-screen {
+  left: 4.57%;
+  top: 1.87%;
+  width: 91.16%;
+  height: 96.19%;
+  border-radius: 8.2% / 3.8%; /* 프레임 구멍의 둥근 모서리 */
+}
+
+.ss-frame.galaxy .ss-screen {
+  left: 2.9%;
+  top: 1.39%;
+  width: 93.6%;
+  height: 97%;
+  border-radius: 6% / 2.8%;
+}
 
 .ss-screen img {
   position: absolute;
@@ -159,28 +180,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.ss-notch {
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  background: var(--foreground);
-}
-
-.ss-frame.ios .ss-notch {
-  width: 32px;
-  height: 9px;
-  border-radius: 6px;
-}
-
-.ss-frame.galaxy .ss-notch {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  top: 8px;
 }
 
 .ss-caption {
@@ -193,17 +192,6 @@
 .ss-caption b {
   color: var(--foreground);
   font-weight: 700;
-}
-
-.ss-hint {
-  position: absolute;
-  bottom: 1.3rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.68rem;
-  color: var(--muted-foreground);
-  letter-spacing: 0.03em;
-  white-space: nowrap;
 }
 
 .splitview-back {
@@ -365,4 +353,105 @@
   border-radius: 1px;
   background: var(--muted-foreground);
   box-shadow: 0 4px 0 var(--muted-foreground), 0 -4px 0 var(--muted-foreground);
+}
+
+/* ---------------- 시작 인트로 (기기 감지 → iPhone → 분리) ---------------- */
+
+.ss-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  opacity: 1;
+  transition: opacity 450ms ease;
+  pointer-events: none;
+}
+
+.ss-intro-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 64px);
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: top 450ms ease;
+}
+
+.ss-intro[data-phase="found"] .ss-intro-title {
+  top: 10%;
+  font-size: 20px;
+}
+
+.ss-spinner {
+  width: 28px;
+  height: 28px;
+  margin-top: 8px;
+  border: 3px solid var(--border);
+  border-top-color: var(--foreground);
+  border-radius: 50%;
+  animation: ss-spin 0.8s linear infinite;
+}
+
+.ss-intro[data-phase="found"] .ss-spinner {
+  display: none;
+}
+
+@keyframes ss-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 패널 안의 활성 폰과 같은 크기·위치(scale 1.4, 가운데)로 놓아서 분리될 때 끊김 없이 이어지게 함 */
+.ss-intro-device {
+  opacity: 0;
+  transition: opacity 450ms ease;
+}
+
+.ss-intro[data-phase="found"] .ss-intro-device {
+  opacity: 1;
+}
+
+.ss-intro-device .ss-device {
+  transform: scale(1.4);
+}
+
+.ss-intro-device .ss-pill,
+.ss-intro-device .ss-caption {
+  visibility: hidden;
+}
+
+/* 분리 전에는 경계 핸들을 숨김 */
+.stage.is-intro .ss-resize-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------------- 시나리오 전환 버튼 (모든 화면이 끝나면 오른쪽 아래에 표시) ---------------- */
+
+.ss-next-btn {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 20;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ss-next-btn:hover {
+  border-color: var(--ring);
+  color: var(--foreground);
 }

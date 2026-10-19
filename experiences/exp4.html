@@ -34,9 +34,9 @@
             <span class="ss-pill">iOS</span>
             <div class="ss-frame ios">
               <div class="ss-screen">
-                <div class="ss-notch"></div>
                 <img id="imgTop" src="../assets/img/smartswitch/ios/1.png" alt="iOS 화면 1" />
               </div>
+            <img class="ss-frame-img" src="../assets/img/smartswitch/frame-ios.png" alt="" />
             </div>
             <p class="ss-caption">화면 <b id="stepTop">1</b></p>
           </div>
@@ -46,13 +46,12 @@
             <span class="ss-pill">Galaxy</span>
             <div class="ss-frame galaxy">
               <div class="ss-screen">
-                <div class="ss-notch"></div>
                 <img id="imgBottom" src="../assets/img/smartswitch/galaxy/1.png" alt="Galaxy 화면 1" />
               </div>
+            <img class="ss-frame-img" src="../assets/img/smartswitch/frame-android.png" alt="" />
             </div>
             <p class="ss-caption">화면 <b id="stepBottom">1</b></p>
           </div>
-          <span class="ss-hint">화면을 탭해보세요</span>
         </div>
 
         <div class="ss-connector" id="ssConnector" hidden>
@@ -65,6 +64,27 @@
       </div>
 
       <div class="qr-scan-layer" id="qrScanLayer"></div>
+
+      <!-- 모든 화면이 끝나면 오른쪽 아래에 나타나는 시나리오 전환 버튼 -->
+      <button class="ss-next-btn" id="ssNextBtn" hidden></button>
+
+      <!-- 시작 인트로: 기기 감지 로딩 → iPhone 화면 → 두 화면으로 분할 -->
+      <div class="ss-intro" id="ssIntro" data-phase="detect" hidden>
+        <p class="ss-intro-title" id="ssIntroTitle">Detecting your phone...</p>
+        <div class="ss-spinner" aria-hidden="true"></div>
+        <div class="ss-intro-device">
+          <div class="ss-device">
+            <span class="ss-pill">iOS</span>
+            <div class="ss-frame ios">
+              <div class="ss-screen">
+                <img src="../assets/img/smartswitch/ios/1.png" alt="iPhone 화면" />
+              </div>
+            <img class="ss-frame-img" src="../assets/img/smartswitch/frame-ios.png" alt="" />
+            </div>
+            <p class="ss-caption">화면 <b>1</b></p>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -76,6 +96,7 @@
     }
 
     const stage = el("stage");
+    const nextBtn = el("ssNextBtn");
     const panelTop = el("panelTop");
     const panelBottom = el("panelBottom");
     const imgTop = el("imgTop");
@@ -83,12 +104,58 @@
     const stepTopEl = el("stepTop");
     const stepBottomEl = el("stepBottom");
 
-    // 폴더에 실제로 존재하는 번호만 적어둠
-    const AVAILABLE = {
-      top: { folder: "../assets/img/smartswitch/ios", nums: [1, 2, 3, 4, 5, 6, 7, 9, 14] },
-      bottom: { folder: "../assets/img/smartswitch/galaxy", nums: [1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14] },
+    // 시나리오 정의: 폴더에 실제로 존재하는 번호만 적어둠
+    const IMG = "../assets/img/smartswitch/";
+    const SCENARIOS = {
+      i2g: {
+        intro: "You are using iPhone!",
+        top: { pill: "iOS", frameClass: "ios", frame: IMG + "frame-ios.png", folder: IMG + "ios", ext: "png", nums: [1, 2, 3, 4, 5, 6, 7, 9, 14] },
+        bottom: { pill: "Galaxy", frameClass: "galaxy", frame: IMG + "frame-android.png", folder: IMG + "galaxy", ext: "png", nums: [1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14] },
+        qrStep: 5,          // 양쪽이 이 번호에 도달하면 QR 스캔 연출
+        burstStep: 7,       // 위쪽이 이 번호가 되는 순간 연결 완료 연출
+        connectorFrom: 7,   // 위쪽이 이 번호부터 두 기기 사이 연결 표시
+        transferFrom: 9,    // 위쪽이 이 번호부터 전송 연출 시작
+        transferStopBottom: 11, // 아래쪽이 이 번호가 되면 전송 연출 종료
+        next: { key: "g2g", label: "Galaxy to Galaxy" },
+      },
+      g2g: {
+        intro: "You are using Galaxy!",
+        top: { pill: "Sender", frameClass: "galaxy", frame: IMG + "frame-android.png", folder: IMG + "g2g-sender", ext: "jpg", nums: [1, 2, 4, 5, 6, 10, 13] },
+        bottom: { pill: "Receiver", frameClass: "galaxy", frame: IMG + "frame-android.png", folder: IMG + "g2g-receiver", ext: "jpg", nums: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13] },
+        qrStep: 4,          // Sender 4(QR 스캔 안내) · Receiver 4(QR 표시)
+        burstStep: 6,       // Sender 6(연결 완료)
+        connectorFrom: 6,
+        transferFrom: 10,   // Sender 10(전송 중)
+        transferStopBottom: 11, // Receiver 11(데이터 정리 중)
+        next: { key: "i2g", label: "iPhone to Galaxy" },
+      },
     };
-    const MAX_STEP = Math.max(...AVAILABLE.top.nums, ...AVAILABLE.bottom.nums);
+
+    let SC = SCENARIOS.i2g;
+    let AVAILABLE = { top: SC.top, bottom: SC.bottom };
+    let MAX_STEP = Math.max(...SC.top.nums, ...SC.bottom.nums);
+
+    const imgSrc = (side, n) => `${AVAILABLE[side].folder}/${n}.${AVAILABLE[side].ext}`;
+
+    function applyScenario(key){
+      SC = SCENARIOS[key];
+      AVAILABLE = { top: SC.top, bottom: SC.bottom };
+      MAX_STEP = Math.max(...SC.top.nums, ...SC.bottom.nums);
+
+      [["top", panelTop], ["bottom", panelBottom]].forEach(([side, panel]) => {
+        const cfg = SC[side];
+        panel.querySelector(".ss-pill").textContent = cfg.pill;
+        panel.querySelector(".ss-frame").className = "ss-frame " + cfg.frameClass;
+        panel.querySelector(".ss-frame-img").src = cfg.frame;
+      });
+
+      // 인트로에 보이는 폰은 위쪽(첫 번째) 기기와 동일
+      const introFrame = intro.querySelector(".ss-frame");
+      introFrame.className = "ss-frame " + SC.top.frameClass;
+      introFrame.querySelector(".ss-frame-img").src = SC.top.frame;
+      intro.querySelector(".ss-pill").textContent = SC.top.pill;
+      intro.querySelector(".ss-screen img").src = imgSrc("top", 1);
+    }
 
     let step = 1;
     let active = "top";
@@ -157,8 +224,7 @@
     function applyAction(side){
       active = side;
       shown[side] = step;
-      const { folder } = AVAILABLE[side];
-      (side === "top" ? imgTop : imgBottom).src = `${folder}/${step}.png`;
+      (side === "top" ? imgTop : imgBottom).src = imgSrc(side, step);
 
       clearDragOverrides();
       panelTop.dataset.role = active === "top" ? "active" : "rest";
@@ -169,13 +235,13 @@
       stepBottomEl.textContent = shown.bottom;
 
       // iOS·Galaxy 둘 다 "화면 5"(QR 스캔 단계)에 도달하면 위 패널의 폰이 아래로 튀어나와 QR을 찍어가는 연출 재생
-      if (!hasPlayedQrAnim && shown.top === 5 && shown.bottom === 5) {
+      if (!hasPlayedQrAnim && shown.top === SC.qrStep && shown.bottom === SC.qrStep) {
         hasPlayedQrAnim = true;
         setTimeout(playQrScanAnimation, 650); // 패널 리사이즈 트랜지션(620ms)이 끝난 뒤 위치를 측정
       }
 
       // iOS 화면 6 → 7(연결 완료) 전환: 폰이 5% 작아졌다가 커지며 완료되는 느낌의 바운스
-      if (side === "top" && step === 7) {
+      if (side === "top" && step === SC.burstStep) {
         const frame = panelTop.querySelector(".ss-frame");
         frame.animate([
           { transform: "scale(1)" },
@@ -196,14 +262,14 @@
       }
 
       // 연결 완료 이후로는 두 기기 사이에 데이터가 오가는 연결 표시를 계속 보여줌
-      if (shown.top >= 7) {
+      if (shown.top >= SC.connectorFrom) {
         el("ssConnector").hidden = false;
       }
 
       // iOS 화면 9(전송 중)부터 갤럭시 화면 11(전송 완료)이 되기 전까지: 파란 점선 + 아이콘이 내려가는 연출
-      if (shown.bottom >= 11) {
+      if (shown.bottom >= SC.transferStopBottom) {
         stopTransferEffect();
-      } else if (shown.top >= 9) {
+      } else if (shown.top >= SC.transferFrom) {
         startTransferEffect();
       }
     }
@@ -241,7 +307,55 @@
       el("ssConnector").querySelectorAll(".ss-falling-icon").forEach((n) => n.remove());
     }
 
+    /* 시작 인트로: Detecting... → You are using iPhone! → 레이아웃이 두 개로 분리 */
+    const intro = el("ssIntro");
+    const introTitle = el("ssIntroTitle");
+    let introActive = false;
+    let introTimers = [];
+
+    function introLater(fn, ms){ introTimers.push(setTimeout(fn, ms)); }
+
+    function cancelIntro(){
+      introTimers.forEach(clearTimeout);
+      introTimers = [];
+      introActive = false;
+      intro.hidden = true;
+      intro.style.opacity = "";
+      stage.classList.remove("is-intro");
+    }
+
+    function playIntro(){
+      introActive = true;
+      stage.classList.add("is-intro");
+      // 분리 전: iOS 패널이 화면 전체를 차지하고 Galaxy 패널은 접혀 있음
+      panelTop.style.flexBasis = "100%";
+      panelBottom.style.flexBasis = "0%";
+      el("ssConnector").style.top = "100%";
+      intro.dataset.phase = "detect";
+      introTitle.textContent = "Detecting your phone...";
+      intro.style.opacity = "1";
+      intro.hidden = false;
+
+      introLater(() => {
+        intro.dataset.phase = "found";
+        introTitle.textContent = SC.intro;
+      }, 1900);
+
+      introLater(() => {
+        stage.classList.remove("is-intro");
+        setSplitRatio(66.667);          // 620ms 트랜지션으로 위/아래 두 개로 분리
+        intro.style.opacity = "0";
+      }, 3900);
+
+      introLater(() => {
+        intro.hidden = true;
+        intro.style.opacity = "";
+        introActive = false;
+      }, 4600);
+    }
+
     function resetSplitview(){
+      cancelIntro();
       step = 1;
       active = "top";
       shown = { top: 1, bottom: 1 };
@@ -253,8 +367,9 @@
       el("ssConnector").hidden = true;
       panelTop.querySelectorAll(".ss-success-burst").forEach((n) => n.remove());
       panelTop.querySelector(".ss-frame").style.visibility = "";
-      imgTop.src = `${AVAILABLE.top.folder}/1.png`;
-      imgBottom.src = `${AVAILABLE.bottom.folder}/1.png`;
+      imgTop.src = imgSrc("top", 1);
+      imgBottom.src = imgSrc("bottom", 1);
+      nextBtn.hidden = true;
       panelTop.dataset.role = "active";
       panelBottom.dataset.role = "rest";
       setSplitRatio(66.667);
@@ -321,6 +436,7 @@
     }
 
     stage.addEventListener("click", () => {
+      if (introActive) return;
       // 현재 번호에 남은 처리가 없으면, 다음 번호로 넘어가서 큐를 새로 만든다
       while (queue.length === 0) {
         if (step >= MAX_STEP) return;
@@ -329,15 +445,32 @@
       }
       const side = queue.shift();
       applyAction(side);
+
+      // 마지막 화면까지 모두 끝나면 다른 시나리오로 이동하는 버튼을 보여줌
+      if (step >= MAX_STEP && queue.length === 0) {
+        nextBtn.textContent = SC.next.label;
+        setTimeout(() => { if (step >= MAX_STEP && queue.length === 0) nextBtn.hidden = false; }, 700);
+      }
     });
 
-    el("startBtn").onclick = () => {
+    function startScenario(key){
+      applyScenario(key);
       resetSplitview();
       showScreen("screen-splitview");
+      playIntro();
+    }
+
+    el("startBtn").onclick = () => startScenario("i2g");
+
+    nextBtn.onclick = (e) => {
+      e.stopPropagation();
+      startScenario(SC.next.key);
     };
 
     el("closeSplitBtn").onclick = (e) => {
       e.stopPropagation();
+      cancelIntro();
+      nextBtn.hidden = true;
       showScreen("screen-intro");
     };
 

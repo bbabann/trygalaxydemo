@@ -1,53 +1,98 @@
-// 체험 카드 데이터: 새 체험을 추가하려면 이 배열에 항목만 추가하면 됩니다.
-const EXPERIENCES = [
+// 체험 카드 데이터: 새 체험을 추가하려면 해당 섹션의 items 배열에 항목만 추가하면 됩니다.
+// link가 없는 항목은 "준비 중" 카드로 표시되고, done: true 항목은 "완료", hold: true 항목은 "보류" 뱃지가 붙습니다.
+const SECTIONS = [
   {
-    id: "exp1",
-    title: "My FanCam",
-    description: "8초 영상을 촬영하고 원하는 인물을 골라 1:1 정사각형 팬캠으로 만들어보세요.",
-    link: "experiences/exp1.html",
+    title: "Switch to Galaxy",
+    items: [
+      {
+        id: "exp4",
+        title: "Smart Switch",
+        description: "iOS·Galaxy 이전 화면 비교",
+        link: "experiences/exp4.html",
+      },
+      {
+        id: "quickshare",
+        title: "Quick Share",
+        description: "준비 중",
+      },
+    ],
   },
   {
-    id: "exp2",
-    title: "Palm Selfie",
-    description: "후면 카메라로 시작해 셔터를 누르면 전면 셀피 카메라로 전환됩니다.",
-    link: "experiences/exp2.html",
+    title: "Camera",
+    items: [
+      {
+        id: "exp1",
+        title: "My FanCam",
+        done: true,
+        description: "원하는 인물만 정사각 팬캠으로",
+        link: "experiences/exp1.html",
+      },
+      {
+        id: "exp2",
+        title: "Palm Selfie",
+        done: true,
+        description: "셔터로 전·후면 전환",
+        link: "experiences/exp2.html",
+      },
+      {
+        id: "exp6",
+        title: "Super Steady",
+        hold: true,
+        description: "흔들림 보정 영상 비교",
+        link: "experiences/exp6.html",
+      },
+    ],
   },
   {
-    id: "exp3",
-    title: "Privacy Display",
-    description: "폰을 좌우로 기울이면 기울인 각도에 따라 화면이 점점 검게 가려집니다.",
-    link: "experiences/exp3.html",
+    title: "Display",
+    items: [
+      {
+        id: "exp3",
+        title: "Privacy Display",
+        done: true,
+        description: "기울이면 화면이 어두워져요",
+        link: "experiences/exp3.html",
+      },
+    ],
   },
   {
-    id: "exp4",
-    title: "Smart Switch",
-    description: "화면을 탭할 때마다 iOS와 Galaxy의 스마트 스위치 진행 화면이 번갈아 넘어갑니다.",
-    link: "experiences/exp4.html",
-  },
-  {
-    id: "exp5",
-    title: "AR Try-On",
-    description: "워치·반지·안경을 손목/손가락/얼굴에 맞춰 띄워보는 AR 체험 프로토타입입니다.",
-    link: "experiences/exp5.html",
-  },
-  {
-    id: "exp6",
-    title: "Super Steady",
-    description: "같은 장면을 찍은 Others와 Galaxy 영상이 가로 폰 두 대에서 동시에 재생됩니다. 탭해서 번갈아 크게 비교해보세요.",
-    link: "experiences/exp6.html",
+    title: "Wearable",
+    items: [
+      {
+        id: "exp5",
+        title: "Try-on",
+        description: "링·워치 AR 착용",
+        link: "experiences/exp5.html",
+      },
+      {
+        id: "glassview",
+        title: "Glass View",
+        description: "준비 중",
+      },
+    ],
   },
 ];
+
+function renderCard(exp) {
+  const inner = `
+        <h2>${exp.title}${exp.done ? '<span class="badge">완료</span>' : ""}${exp.hold ? '<span class="badge badge-hold">보류</span>' : ""}</h2>
+        <p>${exp.description}</p>
+      `;
+  return exp.link
+    ? `<a class="card" href="${exp.link}" data-id="${exp.id}">${inner}</a>`
+    : `<div class="card disabled" data-id="${exp.id}">${inner}</div>`;
+}
 
 function renderCards() {
   const grid = document.getElementById("card-grid");
   if (!grid) return;
 
-  grid.innerHTML = EXPERIENCES.map(
-    (exp) => `
-      <a class="card" href="${exp.link}" data-id="${exp.id}">
-        <h2>${exp.title}</h2>
-        <p>${exp.description}</p>
-      </a>
+  grid.innerHTML = SECTIONS.map(
+    (section) => `
+      <section class="card-section">
+        <h3 class="section-title">${section.title}</h3>
+        ${section.items.map(renderCard).join("")}
+      </section>
     `
   ).join("");
 }

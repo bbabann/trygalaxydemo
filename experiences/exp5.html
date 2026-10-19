@@ -14,7 +14,7 @@
     <div class="experience-page">
       <section class="screen" id="screen-intro">
         <h1>AR Try-On</h1>
-        <p class="hint">워치는 손목, 반지는 검지, 안경은 얼굴에 맞춰 따라다니는 기술 검증용 프로토타입입니다. 지금은 실제 제품 이미지 대신 임의의 플레이스홀더 이미지를 사용합니다.</p>
+        <p class="hint">워치는 손목, 반지는 검지에 맞춰 따라다니는 기술 검증용 프로토타입입니다. 지금은 실제 제품 이미지 대신 임의의 플레이스홀더 이미지를 사용합니다.</p>
         <button class="btn btn-primary" id="startBtn">시작하기</button>
         <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
       </section>
@@ -36,13 +36,12 @@
       <div class="ar-toggle">
         <button class="ar-toggle-btn is-active" id="modeWatchBtn" data-mode="watch">워치</button>
         <button class="ar-toggle-btn" id="modeRingBtn" data-mode="ring">반지</button>
-        <button class="ar-toggle-btn" id="modeGlassesBtn" data-mode="glasses">안경</button>
       </div>
     </section>
   </div>
 
   <script type="module">
-    import { HandLandmarker, FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9";
+    import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9";
 
     const el = (id) => document.getElementById(id);
     const video = el("arVideo");
@@ -51,11 +50,10 @@
 
     let stream = null;
     let loopActive = false;
-    let mode = "watch"; // "watch" | "ring" | "glasses"
+    let mode = "watch"; // "watch" | "ring"
 
     let filesetResolver = null;
     let handLandmarker = null;
-    let faceLandmarker = null;
 
     const IMAGES = {};
     function loadImage(src){
@@ -160,20 +158,6 @@
       return handLandmarker;
     }
 
-    async function ensureFaceLandmarker(){
-      if (faceLandmarker) return faceLandmarker;
-      const fs = await ensureFileset();
-      faceLandmarker = await FaceLandmarker.createFromOptions(fs, {
-        baseOptions: {
-          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate: "CPU"
-        },
-        runningMode: "VIDEO",
-        numFaces: 1
-      });
-      return faceLandmarker;
-    }
-
     /* 정규화 좌표(0~1) → 전면카메라 거울모드(object-fit:cover) 캔버스 픽셀 좌표 */
     function mapPoint(nx, ny, videoW, videoH, canvasW, canvasH){
       const scale = Math.max(canvasW / videoW, canvasH / videoH);
@@ -266,23 +250,6 @@
       drawPlacedImage(IMAGES.ring, center, angle, scale, scale * 0.8);
     }
 
-    function drawGlasses(landmarks, videoW, videoH){
-      const P = (i) => mapPoint(landmarks[i].x, landmarks[i].y, videoW, videoH, canvas.width, canvas.height);
-      const rightEye = P(33);
-      const leftEye = P(263);
-
-      const center = { x: (rightEye.x + leftEye.x) / 2, y: (rightEye.y + leftEye.y) / 2 };
-      const eyeDist = Math.hypot(leftEye.x - rightEye.x, leftEye.y - rightEye.y);
-      const angle = Math.atan2(leftEye.y - rightEye.y, leftEye.x - rightEye.x);
-
-      // 눈 바깥쪽 코너 사이 거리는 안경 렌즈 중심 간격보다 넓으므로 기준값을 더 크게 잡아 보정
-      const scale = (eyeDist / 225) * 1.0;
-
-      // 양쪽 눈의 상대 깊이(z) 차이로 고개가 돌아간 정도를 추정해 정면/측면 이미지를 섞는다
-      const { t, mirror } = sideBlend(landmarks[33].z - landmarks[263].z, 0.05);
-      drawBlendedImage(IMAGES.glasses, IMAGES.glassesSide, center, angle, scale, t, mirror);
-    }
-
     async function loop(){
       if (!loopActive) return;
 
@@ -301,16 +268,6 @@
               else drawRing(landmarks, video.videoWidth, video.videoHeight);
             } else {
               el("arStatus").textContent = mode === "watch" ? "손목을 비춰보세요" : "검지를 비춰보세요";
-            }
-          } else if (mode === "glasses") {
-            const landmarker = await ensureFaceLandmarker();
-            const result = landmarker.detectForVideo(video, now);
-            const landmarks = result.faceLandmarks && result.faceLandmarks[0];
-            if (landmarks) {
-              el("arStatus").textContent = "얼굴에 맞춰 표시 중";
-              drawGlasses(landmarks, video.videoWidth, video.videoHeight);
-            } else {
-              el("arStatus").textContent = "얼굴을 비춰보세요";
             }
           }
         } catch (e) {
@@ -332,7 +289,6 @@
 
     el("modeWatchBtn").onclick = () => setMode("watch");
     el("modeRingBtn").onclick = () => setMode("ring");
-    el("modeGlassesBtn").onclick = () => setMode("glasses");
 
     el("startBtn").onclick = async () => {
       showScreen("screen-ar");
@@ -344,8 +300,6 @@
         IMAGES.watch = await loadCroppedImage("../assets/img/ar/watch-real.png");
         IMAGES.watchSide = await loadCroppedImage("../assets/img/ar/watch-side.svg");
         IMAGES.ring = await loadCroppedImage("../assets/img/ar/ring-real.png");
-        IMAGES.glasses = await loadCroppedImage("../assets/img/ar/glasses.svg");
-        IMAGES.glassesSide = await loadCroppedImage("../assets/img/ar/glasses-side.svg");
       }
       loopActive = true;
       if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);

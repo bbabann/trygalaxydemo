@@ -16,7 +16,7 @@
         <h1>Smart Switch</h1>
         <p class="hint">화면을 탭할 때마다 iOS와 Galaxy의 스마트 스위치 진행 화면이 번갈아 넘어갑니다.</p>
         <button class="btn btn-primary" id="startBtn">시작하기</button>
-        <a class="back-link" href="../index.html">← 홈으로 돌아가기</a>
+        <a class="back-link" href="../index.html?from=experience">← 홈으로 돌아가기</a>
       </section>
     </div>
 
@@ -54,9 +54,7 @@
         </div>
 
         <div class="ss-connector" id="ssConnector" hidden>
-          <span class="ssc-node"></span>
           <div class="ssc-dots"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i></div>
-          <span class="ssc-node"></span>
         </div>
 
         <div class="ss-resize-handle" id="ssResizeHandle" aria-label="두 화면 비율 드래그로 조절"></div>
@@ -321,6 +319,7 @@
         if (connector.hidden) {
           // 처음 연결되는 순간: 점들이 위에서 아래로 한 번 차례로 켜지며 이어짐
           connector.hidden = false;
+          stage.classList.add("is-connected");
           connector.classList.remove("is-connecting");
           void connector.offsetWidth;
           connector.classList.add("is-connecting");
@@ -374,12 +373,14 @@
       if (transferEffectOn) return;
       transferEffectOn = true;
       el("ssConnector").classList.add("is-transferring");
+      stage.classList.add("is-xfer");
       transferIntervalId = setInterval(spawnDataFlyer, 800);
     }
 
     function stopTransferEffect(){
       transferEffectOn = false;
       el("ssConnector").classList.remove("is-transferring");
+      stage.classList.remove("is-xfer");
       if (transferIntervalId) { clearInterval(transferIntervalId); transferIntervalId = null; }
       cancelFlights(true);
     }
@@ -446,6 +447,7 @@
       el("qrScanLayer").innerHTML = "";
       el("ssConnector").hidden = true;
       el("ssConnector").classList.remove("is-connecting");
+      stage.classList.remove("is-connected", "is-xfer");
       [panelTop, panelBottom].forEach((p) => p.querySelectorAll(".ss-success-burst").forEach((n) => n.remove()));
       panelTop.querySelector(".ss-frame").style.visibility = "";
       imgTop.src = imgSrc("top", 1);

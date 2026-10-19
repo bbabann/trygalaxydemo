@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Glass View | Try Galaxy Demo</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/artryon.css" />
+  <style>
+    .glass-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 20px 24px 14px;
+      gap: 10px;
+    }
+    .glass-screen[hidden] { display: none; }
+
+    .glass-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.4;
+      text-align: center;
+      word-break: keep-all;
+    }
+
+    .glass-cards {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .glass-card {
+      position: relative;
+      display: block;
+      width: 100%;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      background: #222;
+    }
+    .glass-card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 좌상단 텍스트 가독성을 위한 딤 */
+    .glass-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 55%);
+      z-index: 1;
+    }
+    .glass-card-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.3;
+      text-align: left;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .glass-card-label small {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .glass-back {
+      align-self: flex-start;
+      background: none;
+      border: 0;
+      padding: 0;
+      font: inherit;
+      color: var(--muted-foreground);
+      cursor: pointer;
+    }
+
+    /* ---------------- Meeting Summary 체험 ---------------- */
+    .glass-meeting {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      padding: 0;
+      gap: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    /* 가로형: 사진을 화면 전체 배경으로 쓰고, 따라 읽기 패널은 아래에 얹음 */
+    .meeting-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 38%;
+    }
+    .meeting-back {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 3;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .karaoke {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      padding: 56px 28px 22px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.55) 60%, rgba(0, 0, 0, 0) 100%);
+      color: #fff;
+    }
+    .karaoke > * { max-width: 640px; margin-left: auto; margin-right: auto; }
+    .karaoke-status {
+      margin: 0 0 12px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.85;
+      text-align: center;
+    }
+    .voice-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px 16px 14px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(18px) saturate(140%);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+    }
+    .voice-orb {
+      flex: 0 0 56px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .voice-orb span {
+      display: block;
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      background: #fff;
+      animation: voice-bar 1s ease-in-out infinite;
+    }
+    .voice-orb span:nth-child(2) { animation-delay: 0.15s; }
+    .voice-orb span:nth-child(3) { animation-delay: 0.3s; }
+    .voice-orb span:nth-child(4) { animation-delay: 0.45s; }
+    .voice-orb span:nth-child(5) { animation-delay: 0.6s; }
+    .voice-orb.paused span {
+      animation: none;
+      height: 8px;
+    }
+    /* 요약 대기 중 제미나이 로고 맥박 효과 */
+    .gemini-logo {
+      width: 30px;
+      height: 30px;
+      animation: gemini-pulse 1.6s ease-in-out infinite;
+    }
+    .voice-orb.stopped .gemini-logo {
+      animation: none;
+    }
+    @keyframes gemini-pulse {
+      0%, 100% { transform: scale(0.9); opacity: 0.75; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    .karaoke-text.solid {
+      color: #fff;
+    }
+    @keyframes voice-bar {
+      0%, 100% { transform: scaleY(0.4); }
+      50% { transform: scaleY(1.1); }
+    }
+    .karaoke-text {
+      flex: 1;
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.5;
+      text-align: left;
+      word-break: keep-all;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .karaoke-text span {
+      transition: color 0.15s ease;
+    }
+    .karaoke-text span.on {
+      color: #fff;
+    }
+    .summary-cta {
+      display: block;
+      margin-top: 12px;
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #fff;
+      color: #111;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .summary-cta.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .debug-heard {
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+      word-break: break-all;
+      opacity: 0.8;
+    }
+    .debug-heard:empty {
+      display: none;
+    }
+    .mic-retry {
+      display: block;
+      margin: 14px auto 0;
+      padding: 8px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 999px;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* ---------------- Samsung Notes 화면 ---------------- */
+    .notes-screen {
+      position: relative;
+      flex: 1;
+      height: auto;
+      min-height: 0;
+      padding: 0;
+      gap: 0;
+      align-items: stretch;
+      text-align: left;
+      background: #fff;
+      color: #111;
+      overflow: hidden;
+      font-size: 14px;
+    }
+    .notes-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #eee;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .notes-icon {
+      background: none;
+      border: 0;
+      padding: 0 4px;
+      font: inherit;
+      font-size: 18px;
+      color: #111;
+      cursor: pointer;
+    }
+    .notes-body {
+      flex: 1;
+      min-height: 0;
+      padding: 20px 20px 40px;
+      overflow: auto;
+    }
+    .notes-date {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #888;
+    }
+    .notes-title {
+      margin: 0 0 10px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .notes-badge {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3b4bb8;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .notes-body h3 {
+      margin: 18px 0 8px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .notes-body ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.7;
+    }
+    .end-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 28px;
+      background: rgba(0, 0, 0, 0.6);
+    }
+    .end-actions {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+    .end-btn {
+      flex: 1;
+      padding: 14px 8px;
+      border: 0;
+      border-radius: 12px;
+      background: #3a3a3c;
+      color: #fff;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .end-btn-primary {
+      background: #fff;
+      color: #111;
+    }
+
+    /* ---------------- Baking: See & Ask (카메라 + 사물 인식) ---------------- */
+    .glass-baking { position: relative; flex: 1; min-height: 0; padding: 0; gap: 0; background: #000; overflow: hidden; }
+    .glass-baking video, .bk-photo, #bkCanvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    #bkCanvas { pointer-events: none; z-index: 1; }
+    .bk-status {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 3;
+      padding: 6px 14px; border-radius: 999px; background: rgba(0, 0, 0, 0.5);
+      color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .bk-bottom {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+      padding: 36px 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 100%);
+    }
+    .bk-answer, .bk-ask { width: 100%; max-width: 640px; }
+    .bk-answer .karaoke-text { color: #fff; }
+    .bk-ask { font: inherit; color: #fff; text-align: left; cursor: pointer; }
+    .bk-ask small { display: block; margin-top: 2px; font-size: 11px; font-weight: 500; opacity: 0.7; }
+
+    /* ---------------- 가로형 프레임 ----------------
+       PC: 780×360 가로 프레임(기존 세로 프레임을 눕힌 크기)으로 고정 / 폰: 가로로 돌리면 화면 전체 */
+    .experience-page { padding: 0; justify-content: stretch; }
+    #screen-intro { flex: 1; justify-content: center; padding: 24px; }
+    #screen-intro .hint { max-width: 460px; }
+    @media (min-width: 400px) {
+      .app-frame {
+        --fw: min(780px, calc(100vw - 32px));
+        width: var(--fw);
+        max-width: none;
+        height: calc(var(--fw) * 360 / 780);
+      }
+    }
+    @media (orientation: landscape) and (max-height: 500px) {
+      body { display: block; min-height: 0; }
+      .app-frame { width: 100vw; max-width: none; height: 100dvh; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+    }
+    /* 폰을 세로로 들고 있으면 가로로 돌리라는 안내 */
+    .rotate-hint { display: none; }
+    @media (orientation: portrait) and (max-width: 500px) {
+      .rotate-hint {
+        position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px; padding: 24px;
+        background: #fff; color: #111; text-align: center;
+      }
+      .rotate-hint svg { width: 64px; height: 64px; animation: rotate-phone 2.4s ease-in-out infinite; }
+      .rotate-hint h2 { margin: 0; font-size: 20px; font-weight: 700; }
+      .rotate-hint p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }
+    }
+    @keyframes rotate-phone {
+      0%, 25% { transform: rotate(0deg); }
+      60%, 100% { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <div class="experience-page">
+
+      <!-- 인트로 -->
+      <section class="screen" id="screen-intro">
+        <h1>Smart Glass View</h1>
+        <p class="hint">Galaxy의 Smart Glass View를 미리 체험해보세요. 실제 기기 대신 화면으로 Smart Glass View의 기능을 살펴보는 프로토타입입니다.</p>
+        <button class="btn btn-primary" id="startBtn">시작하기</button>
+        <a class="back-link" href="../index.html?from=experience">← 홈으로 돌아가기</a>
+      </section>
+
+      <!-- 체험 선택 -->
+      <section class="screen glass-screen" id="screen-select" hidden>
+        <h1 class="glass-title">어떤 상황을 체험해보실래요?</h1>
+        <div class="glass-cards">
+          <button class="glass-card" data-id="baking" type="button">
+            <img src="../assets/img/glassview/baking.webp" alt="" />
+            <span class="glass-card-label">Baking<small>See &amp; Ask</small></span>
+          </button>
+          <button class="glass-card" data-id="travel" type="button">
+            <img src="../assets/img/glassview/travel.webp" alt="" />
+            <span class="glass-card-label">Travel<small>Live Translation</small></span>
+          </button>
+          <button class="glass-card" data-id="meeting" type="button">
+            <img src="../assets/img/glassview/meeting.webp" alt="" />
+            <span class="glass-card-label">Meeting<small>Summary</small></span>
+          </button>
+          <button class="glass-card" data-id="album" type="button">
+            <img src="../assets/img/glassview/album.webp" alt="" />
+            <span class="glass-card-label">Album<small>Playback</small></span>
+          </button>
+        </div>
+        <button class="glass-back" id="backBtn" type="button">← 처음으로</button>
+      </section>
+
+      <!-- Meeting Summary: 사진 + 따라 읽기 -->
+      <section class="screen glass-meeting" id="screen-meeting" hidden>
+        <img class="meeting-photo" src="../assets/img/glassview/meeting-detail.webp" alt="화이트보드 회의 메모" />
+        <button class="meeting-back" id="meetingBackBtn" type="button">← 목록으로</button>
+        <div class="karaoke">
+          <p class="karaoke-status" id="karaokeStatus"></p>
+          <div class="voice-card">
+            <div class="voice-orb" id="voiceOrb" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p class="karaoke-text" id="karaokeText"></p>
+          </div>
+          <p class="debug-heard" id="debugHeard"></p>
+          <button class="mic-retry" id="micRetryBtn" type="button" hidden>다시 시도</button>
+        </div>
+      </section>
+
+      <!-- 요약 대기 -->
+      <section class="screen glass-meeting" id="screen-summary" hidden>
+        <img class="meeting-photo" src="../assets/img/glassview/meeting-detail.webp" alt="" />
+        <div class="karaoke">
+          <div class="voice-card">
+            <div class="voice-orb" id="summaryOrb" aria-hidden="true">
+              <img class="gemini-logo" src="../assets/img/glassview/gemini-logo-transparent.png" alt="" />
+            </div>
+            <p class="karaoke-text solid" id="summaryText"></p>
+          </div>
+          <button class="summary-cta" id="openNotesBtn" type="button">노트앱 확인하기</button>
+        </div>
+      </section>
+
+      <!-- Baking: See & Ask — 카메라로 비춘 물체를 인식하고 물어보기 -->
+      <section class="screen glass-baking" id="screen-baking" hidden>
+        <video id="bkVideo" autoplay muted playsinline></video>
+        <img class="bk-photo" id="bkPhoto" src="../assets/img/glassview/baking.webp" alt="" hidden />
+        <canvas id="bkCanvas"></canvas>
+        <button class="meeting-back" id="bkBackBtn" type="button">← 목록으로</button>
+        <div class="bk-status" id="bkStatus">카메라를 준비하고 있어요…</div>
+        <div class="bk-bottom">
+          <div class="voice-card bk-answer" id="bkAnswer" hidden>
+            <div class="voice-orb" aria-hidden="true">
+              <img class="gemini-logo" src="../assets/img/glassview/gemini-logo-transparent.png" alt="" />
+            </div>
+            <p class="karaoke-text" id="bkAnswerText"></p>
+          </div>
+          <button class="voice-card bk-ask" id="bkAskBtn" type="button">
+            <div class="voice-orb paused" id="bkOrb" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <span class="karaoke-text solid">제미나이, 이거 뭐야?<small>말하거나 눌러서 물어보세요</small></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 삼성 노트앱 요약 화면 -->
+      <section class="screen notes-screen" id="screen-notes" hidden>
+        <header class="notes-bar">
+          <button class="notes-icon" id="notesBackBtn" type="button" aria-label="뒤로">←</button>
+          <span>노트</span>
+          <span class="notes-icon" aria-hidden="true">⋮</span>
+        </header>
+        <div class="notes-body">
+          <p class="notes-date">2026년 10월 19일 오후 2:20</p>
+          <h2 class="notes-title">Stage Design Meeting</h2>
+          <span class="notes-badge">✦ Gemini 요약</span>
+
+          <h3>핵심 포인트</h3>
+          <ul>
+            <li>무대가 평평해 보이는 문제: 프레젠터 영역과 메인 LED 사이 거리를 넓혀 깊이감 확보</li>
+            <li>메인 LED 크기: 약 24m × 8m (구조 검토 후 최종 치수 확정)</li>
+            <li>메인 LED의 보이는 베젤 최소화 방안 검토</li>
+            <li>오프닝: 기존 키노트 그래픽 대신 애니모픽 콘텐츠 활용</li>
+          </ul>
+
+          <h3>미결정 사항</h3>
+          <ul>
+            <li>측면 스크린 각도, 가로 폭, 투명 LED 적용 여부</li>
+            <li>객석 조명 밀도, 최종 스피커 위치, 오프닝 카메라 위치</li>
+            <li>제품 공개 타이밍, 무대 바닥 소재</li>
+          </ul>
+
+          <h3>다음 액션</h3>
+          <ul>
+            <li>제작팀과 최종 렌더 확인</li>
+            <li>영상 공개 후 애니메이션 작업 시작</li>
+          </ul>
+        </div>
+
+        <div class="end-overlay" id="endOverlay" hidden>
+          <div class="end-actions">
+            <button class="end-btn end-btn-primary" id="retryBtn" type="button">이 체험 다시하기</button>
+            <button class="end-btn" id="otherBtn" type="button">다른 상황 체험하기</button>
+            <button class="end-btn" id="homeBtn" type="button">홈으로 돌아가기</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- 폰 세로 모드 안내 (가로로 돌리면 사라짐) -->
+  <div class="rotate-hint" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" /><line x1="11" y1="18.5" x2="13" y2="18.5" /></svg>
+    <h2>폰을 가로로 돌려주세요</h2>
+    <p>Smart Glass View는 가로 화면에서 체험할 수 있어요.<br />화면 회전 잠금이 켜져 있다면 꺼 주세요.</p>
+    <a class="back-link" href="../index.html?from=experience">← 홈으로 돌아가기</a>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach((s) => {
+        s.hidden = s.id !== id;
+      });
+    }
+
+    // ---------- Meeting Summary: 문구 / 매칭 설정 ----------
+    const PHRASE = "제미나이, 이 화이트보드의 중요 포인트를 요약해서 삼성 노트앱에 저장해줄 수 있어?";
+    // 인식 결과가 "Gemini"로 나오는 경우도 허용
+    const VARIANTS = [PHRASE, "Gemini, 이 화이트보드의 중요 포인트를 요약해서 삼성 노트앱에 저장해줄 수 있어?"];
+    const PASS_RATIO = 0.85;   // 이 비율 이상 맞으면 통과
+    const AUTO_MS = 3500;      // 마이크를 쓰지 않을 때 자동으로 읽는 시간
+    const SHOW_DEBUG = false;      // 인식된 글자와 일치율을 자막 아래에 표시 (확인 후 false로)
+    const SUMMARY_WAIT_MS = 5000;  // 요약 대기 시간 후 노트앱 CTA 노출
+    const END_DELAY_MS = 5000;     // 노트앱 화면 진입 후 마무리 CTA 노출까지의 시간
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+    function lcsLength(a, b) {
+      const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1] + 1
+            : Math.max(dp[i - 1][j], dp[i][j - 1]);
+        }
+      }
+      return dp[a.length][b.length];
+    }
+
+    // 인식 텍스트가 각 문구와 얼마나 맞는지 (0~1)
+    function matchRatio(heard) {
+      const h = norm(heard);
+      if (!h) return 0;
+      return Math.min(1, Math.max(...VARIANTS.map((v) => {
+        const n = norm(v);
+        return lcsLength(h, n) / n.length;
+      })));
+    }
+
+    // ---------- 노래방 자막 렌더링 ----------
+    const karaokeText = el("karaokeText");
+    const karaokeStatus = el("karaokeStatus");
+    let charSpans = [];
+    let sigIndex = []; // 글자/숫자가 있는 문자의 위치 (띄어쓰기·문장부호 제외)
+
+    function buildKaraoke() {
+      karaokeText.textContent = "";
+      charSpans = [];
+      sigIndex = [];
+      [...PHRASE].forEach((ch, i) => {
+        const span = document.createElement("span");
+        span.textContent = ch;
+        karaokeText.appendChild(span);
+        charSpans.push(span);
+        if (/[\p{L}\p{N}]/u.test(ch)) sigIndex.push(i);
+      });
+    }
+
+    function setProgress(ratio) {
+      const k = Math.round(ratio * sigIndex.length);
+      const lastOn = k === 0 ? -1 : sigIndex[k - 1];
+      charSpans.forEach((span, i) => span.classList.toggle("on", i <= lastOn));
+    }
+
+    function setStatus(text) {
+      karaokeStatus.textContent = text;
+    }
+
+    // 디버그: 마이크가 들은 글자와 문구 일치율 표시
+    function updateDebug(heardText, ratio) {
+      const box = el("debugHeard");
+      if (!SHOW_DEBUG) {
+        box.textContent = "";
+        return;
+      }
+      box.textContent = `들린 글자: ${heardText || "(없음)"} / 일치율 ${Math.round(ratio * 100)}%`;
+      console.log("heard:", heardText, "ratio:", ratio.toFixed(2));
+    }
+
+    // ---------- Meeting Summary: 상태 ----------
+    let session = 0;        // 화면을 떠나거나 다시 시작할 때 증가시켜 이전 비동기 작업을 무효화
+    let rec = null;
+    let heard = "";         // 이전 인식 세션까지 누적된 텍스트
+    let sessionText = "";   // 현재 인식 세션의 텍스트
+    let passed = false;
+    let fatal = false;
+    let autoTimer = null;
+
+    let summaryTimer = null;
+    let endTimer = null;
+
+    function clearFlowTimers() {
+      clearTimeout(summaryTimer);
+      clearTimeout(endTimer);
+      summaryTimer = null;
+      endTimer = null;
+      el("openNotesBtn").classList.remove("is-visible");
+      el("endOverlay").hidden = true;
+      el("micRetryBtn").hidden = true;
+      el("debugHeard").textContent = "";
+      el("voiceOrb").classList.remove("paused");
+    }
+
+    function resetMeeting() {
+      session++;
+      passed = false;
+      fatal = false;
+      heard = "";
+      sessionText = "";
+      clearInterval(autoTimer);
+      clearFlowTimers();
+      if (rec) {
+        rec.onend = null;
+        rec.onresult = null;
+        rec.onerror = null;
+        try { rec.abort(); } catch (_) {}
+        rec = null;
+      }
+      setProgress(0);
+    }
+
+    function openMeeting() {
+      resetMeeting();
+      buildKaraoke();
+      showScreen("screen-meeting");
+      setStatus("마이크 권한을 허용해주세요");
+      requestMic(session);
+    }
+
+    async function requestMic(id) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return fallbackAuto("마이크를 사용할 수 없어 자동으로 읽어드릴게요", id);
+      }
+      try {
+        // 권한 창을 띄우기 위한 호출. 실제 인식은 SpeechRecognition이 담당
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (_) {
+        if (id !== session) return;
+        return fallbackAuto("마이크를 허용하지 않아 자동으로 읽어드릴게요", id);
+      }
+      if (id !== session) return;
+      if (!SR) {
+        return fallbackAuto("이 브라우저는 음성 인식을 지원하지 않아 자동으로 읽어드릴게요", id);
+      }
+      startListening(id);
+    }
+
+    function startListening(id) {
+      fatal = false;
+      el("micRetryBtn").hidden = true;
+      setStatus("따라 읽어보세요");
+      rec = new SR();
+      rec.lang = "ko-KR";
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+
+      rec.onstart = () => {
+        if (SHOW_DEBUG && id === session) el("debugHeard").textContent = "음성 인식 시작됨 (말해 보세요)";
+      };
+
+      rec.onresult = (e) => {
+        if (id !== session) return;
+        sessionText = Array.from(e.results).map((r) => r[0].transcript).join(" ");
+        const text = (heard + " " + sessionText).trim();
+        const ratio = matchRatio(text);
+        setProgress(ratio);
+        updateDebug(text, ratio);
+        if (ratio >= PASS_RATIO) pass(id);
+      };
+
+      rec.onerror = (e) => {
+        if (id !== session) return;
+        console.warn("speech recognition error:", e.error);
+        if (SHOW_DEBUG) el("debugHeard").textContent = `음성 인식 오류: ${e.error}`;
+        if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") {
+          fatal = true;
+          rec.onend = null;
+          try { rec.abort(); } catch (_) {}
+          showMicError(id, "음성 인식을 시작하지 못했어요. 다시 시도해주세요");
+        }
+        if (e.error === "network") {
+          fatal = true;
+          rec.onend = null;
+          try { rec.abort(); } catch (_) {}
+          showMicError(id, "음성 인식 서버에 연결하지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해주세요");
+        }
+        // no-speech 등은 onend에서 다시 듣기 시작
+      };
+
+      rec.onend = () => {
+        if (id !== session || passed || fatal) return;
+        heard = (heard + " " + sessionText).trim();
+        sessionText = "";
+        try { rec.start(); } catch (_) {}
+      };
+
+      try {
+        rec.start();
+      } catch (_) {
+        showMicError(id, "음성 인식을 시작하지 못했어요. 다시 시도해주세요");
+      }
+    }
+
+    // 마이크는 허용됐는데 인식이 안 될 때: 자동으로 넘기지 않고 재시도 버튼을 보여줌
+    function showMicError(id, message) {
+      if (id !== session) return;
+      setStatus(message);
+      el("micRetryBtn").hidden = false;
+    }
+
+    // 마이크 미사용 시: 문구가 차오르는 효과 후 자동 통과
+    function fallbackAuto(message, id) {
+      if (id !== session) return;
+      setStatus(message);
+      const start = Date.now();
+      clearInterval(autoTimer);
+      autoTimer = setInterval(() => {
+        if (id !== session) return clearInterval(autoTimer);
+        const p = Math.min(1, (Date.now() - start) / AUTO_MS);
+        setProgress(p);
+        if (p >= 1) {
+          clearInterval(autoTimer);
+          pass(id);
+        }
+      }, 50);
+    }
+
+    function pass(id) {
+      if (id !== session || passed) return;
+      passed = true;
+      clearInterval(autoTimer);
+      if (rec) {
+        rec.onend = null;
+        try { rec.abort(); } catch (_) {}
+        rec = null;
+      }
+      setProgress(1);
+      el("voiceOrb").classList.add("paused");
+      setStatus("완료!");
+      setTimeout(() => {
+        if (id !== session) return;
+        showSummary(id);
+      }, 800);
+    }
+
+    // 요약 대기 → 일정 시간 후 노트앱 CTA 노출
+    function showSummary(id) {
+      showScreen("screen-summary");
+      el("summaryText").textContent = "네, 노트앱에 요약해드릴게요. 잠시만 기다려주세요.";
+      el("summaryOrb").classList.remove("stopped");
+      summaryTimer = setTimeout(() => {
+        if (id !== session) return;
+        el("summaryText").textContent = "요약이 완료되었어요. 노트앱을 열어주세요.";
+        el("summaryOrb").classList.add("stopped");
+        el("openNotesBtn").classList.add("is-visible");
+      }, SUMMARY_WAIT_MS);
+    }
+
+    function openNotes() {
+      clearTimeout(summaryTimer);
+      showScreen("screen-notes");
+      endTimer = setTimeout(showEnd, END_DELAY_MS);
+    }
+
+    function showEnd() {
+      el("endOverlay").hidden = false;
+    }
+
+    // ---------- 이벤트 연결 ----------
+    el("startBtn").addEventListener("click", () => showScreen("screen-select"));
+    el("backBtn").addEventListener("click", () => showScreen("screen-intro"));
+
+    el("meetingBackBtn").addEventListener("click", () => {
+      resetMeeting();
+      showScreen("screen-select");
+    });
+    el("openNotesBtn").addEventListener("click", openNotes);
+    el("micRetryBtn").addEventListener("click", () => startListening(session));
+    el("notesBackBtn").addEventListener("click", () => {
+      clearTimeout(endTimer);
+      showEnd();
+    });
+    el("retryBtn").addEventListener("click", () => openMeeting());
+    el("otherBtn").addEventListener("click", () => {
+      resetMeeting();
+      showScreen("screen-select");
+    });
+    el("homeBtn").addEventListener("click", () => {
+      window.location.href = "../index.html?from=experience";
+    });
+
+    document.querySelectorAll(".glass-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        if (card.dataset.id === "meeting") {
+          openMeeting();
+          return;
+        }
+        console.log("selected:", card.dataset.id);
+      });
+    });
+  </script>
+
+  <script>
+    /* ---------- Baking: See & Ask ----------
+       후면 카메라 화면 위에 사물 인식 상자를 그리고, 말하거나 눌러서 물으면 가장 잘 보이는 물체에 대한 설명을 보여줌.
+       사물 인식은 브라우저 안에서 동작(MediaPipe ObjectDetector)해서 API 키나 서버가 필요 없음.
+       카메라를 못 쓰면 샘플 사진 + 미리 정한 인식 상자로 같은 흐름을 보여줌. */
+    (() => {
+      const MP_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9";
+      const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite";
+
+      // 인식 가능한 사물 80종: 영어 이름 → [한글 이름, 짧은 설명]. (음식/베이킹에 한정하지 않고 일반 사물 설명)
+      const ITEMS = {
+        person: ["사람", "사람이에요. 안경 속 비서에게 일정이나 메모를 물어볼 수 있어요."],
+        bicycle: ["자전거", "두 바퀴를 페달로 굴려 움직이는 탈것이에요."],
+        car: ["자동차", "도로를 달리는 승용차예요."],
+        motorcycle: ["오토바이", "엔진으로 달리는 이륜차예요. 탈 때는 헬멧이 꼭 필요해요."],
+        airplane: ["비행기", "하늘을 나는 항공기예요."],
+        bus: ["버스", "많은 사람을 태우고 정해진 노선을 다니는 차량이에요."],
+        train: ["기차", "선로 위를 달리는 열차예요."],
+        truck: ["트럭", "짐을 싣고 나르는 큰 차량이에요."],
+        boat: ["배", "물 위를 다니는 탈것이에요."],
+        "traffic light": ["신호등", "초록불에는 건너고 빨간불에는 멈추라는 신호예요."],
+        "fire hydrant": ["소화전", "불이 났을 때 물을 공급하는 설비예요."],
+        "stop sign": ["정지 표지판", "이 표지판 앞에서는 반드시 멈춰야 해요."],
+        "parking meter": ["주차 요금기", "주차한 시간만큼 요금을 내는 기계예요."],
+        bench: ["벤치", "여럿이 앉아 쉴 수 있는 긴 의자예요."],
+        bird: ["새", "날개와 깃털이 있는 동물이에요."],
+        cat: ["고양이", "반려동물로 많이 키우는 동물이에요."],
+        dog: ["강아지", "사람과 오래 함께 지내 온 반려동물이에요."],
+        horse: ["말", "빠르게 달리고 승마에 쓰이는 동물이에요."],
+        sheep: ["양", "털을 얻으려고 기르는 동물이에요."],
+        cow: ["소", "우유와 고기를 얻으려고 기르는 동물이에요."],
+        elephant: ["코끼리", "육지에서 가장 큰 동물이에요."],
+        bear: ["곰", "덩치가 크고 겨울잠을 자는 동물이에요."],
+        zebra: ["얼룩말", "흑백 줄무늬가 있는 말과 동물이에요."],
+        giraffe: ["기린", "목이 가장 긴 동물이에요."],
+        backpack: ["가방", "등에 메는 가방이에요."],
+        umbrella: ["우산", "비나 햇빛을 가리는 도구예요."],
+        handbag: ["핸드백", "손에 들거나 어깨에 메는 가방이에요."],
+        tie: ["넥타이", "셔츠 목에 매는 천이에요."],
+        suitcase: ["여행 가방", "여행할 때 짐을 담는 가방이에요."],
+        frisbee: ["프리스비", "던지고 받으며 노는 원반이에요."],
+        skis: ["스키", "눈 위를 미끄러지며 타는 판이에요."],
+        snowboard: ["스노보드", "눈 위를 타는 한 장짜리 판이에요."],
+        "sports ball": ["공", "운동 경기에 쓰는 공이에요."],
+        kite: ["연", "바람을 타고 하늘에 띄우는 놀잇감이에요."],
+        "baseball bat": ["야구 방망이", "야구에서 공을 치는 도구예요."],
+        "baseball glove": ["야구 글러브", "공을 잡을 때 손에 끼는 장갑이에요."],
+        skateboard: ["스케이트보드", "바퀴 달린 판 위에 올라 타는 운동기구예요."],
+        surfboard: ["서프보드", "파도를 타는 판이에요."],
+        "tennis racket": ["테니스 라켓", "테니스공을 치는 도구예요."],
+        bottle: ["병", "액체를 담는 용기예요."],
+        "wine glass": ["와인잔", "와인을 마시는 잔이에요."],
+        cup: ["컵", "음료를 담아 마시는 그릇이에요."],
+        fork: ["포크", "음식을 찍어 먹는 식기예요."],
+        knife: ["칼", "자르는 데 쓰는 도구예요. 다룰 때 조심해야 해요."],
+        spoon: ["숟가락", "국이나 음식을 떠먹는 식기예요."],
+        bowl: ["그릇", "음식이나 재료를 담는 둥근 그릇이에요."],
+        banana: ["바나나", "노랗게 익는 열대 과일이에요."],
+        apple: ["사과", "아삭하고 새콤달콤한 과일이에요."],
+        sandwich: ["샌드위치", "빵 사이에 재료를 넣은 음식이에요."],
+        orange: ["오렌지", "비타민 C가 많은 감귤류 과일이에요."],
+        broccoli: ["브로콜리", "초록색 꽃송이 모양의 채소예요."],
+        carrot: ["당근", "주황색 뿌리채소예요."],
+        "hot dog": ["핫도그", "소시지를 빵이나 튀김옷으로 감싼 음식이에요."],
+        pizza: ["피자", "둥근 도우 위에 치즈와 토핑을 올려 구운 음식이에요."],
+        donut: ["도넛", "가운데 구멍이 있는 달콤한 간식이에요."],
+        cake: ["케이크", "빵과 크림으로 만든 달콤한 디저트예요."],
+        chair: ["의자", "앉을 때 쓰는 가구예요."],
+        couch: ["소파", "편하게 앉거나 누울 수 있는 긴 의자예요."],
+        "potted plant": ["화분", "화분에 심은 식물이에요. 햇빛과 물을 알맞게 줘야 해요."],
+        bed: ["침대", "잠잘 때 쓰는 가구예요."],
+        "dining table": ["식탁", "식사할 때 쓰는 탁자예요."],
+        toilet: ["변기", "화장실에 있는 위생 설비예요."],
+        tv: ["TV", "영상을 보는 화면 기기예요."],
+        laptop: ["노트북", "들고 다닐 수 있는 컴퓨터예요."],
+        mouse: ["마우스", "컴퓨터 화면의 포인터를 움직이는 장치예요."],
+        remote: ["리모컨", "멀리서 기기를 조작하는 장치예요."],
+        keyboard: ["키보드", "글자를 입력하는 장치예요."],
+        "cell phone": ["휴대폰", "통화하고 앱을 쓰는 스마트 기기예요."],
+        microwave: ["전자레인지", "음식을 빠르게 데우는 주방 가전이에요."],
+        oven: ["오븐", "열로 음식을 굽는 주방 가전이에요."],
+        toaster: ["토스터", "빵을 노릇하게 굽는 가전이에요."],
+        sink: ["싱크대", "설거지와 손 씻기에 쓰는 시설이에요."],
+        refrigerator: ["냉장고", "음식을 차갑게 보관하는 가전이에요."],
+        book: ["책", "글과 그림이 담긴 인쇄물이에요."],
+        clock: ["시계", "시간을 알려주는 기기예요."],
+        vase: ["꽃병", "꽃을 꽂아 두는 병이에요."],
+        scissors: ["가위", "종이나 천을 자르는 도구예요."],
+        "teddy bear": ["곰 인형", "곰 모양으로 만든 인형이에요."],
+        "hair drier": ["헤어드라이어", "머리카락을 말리는 기기예요."],
+        toothbrush: ["칫솔", "이를 닦는 도구예요."],
+      };
+      // "…이에요 / …예요" 구분 (받침 유무)
+      const copula = (w) => { const c = w.charCodeAt(w.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0 ? "이에요" : "예요"; };
+      // 카메라 없이 보여줄 샘플: 사진(baking.webp) 속 휴대폰 위치 (사진 크기 대비 비율)
+      const SAMPLE = { key: "cell phone", score: 0.91, box: { x: 0.64, y: 0.45, w: 0.14, h: 0.18 }, natural: [2000, 1136] };
+
+      const video = el("bkVideo"), photo = el("bkPhoto"), canvas = el("bkCanvas"), ctx = canvas.getContext("2d");
+      const statusEl = el("bkStatus"), answerEl = el("bkAnswer"), answerText = el("bkAnswerText"), orb = el("bkOrb");
+      let stream = null, detector = null, raf = 0, session = 0, fallback = false;
+      let detections = [], lastRun = 0, asking = false, answerTimer = null, rec = null, lastVoice = 0;
+
+      const koName = (k) => (ITEMS[k] ? ITEMS[k][0] : k);
+      const setStatus = (t) => { statusEl.textContent = t; };
+
+      async function ensureDetector() {
+        if (detector) return detector;
+        const { ObjectDetector, FilesetResolver } = await import(MP_URL);
+        const fileset = await FilesetResolver.forVisionTasks(MP_URL + "/wasm");
+        detector = await ObjectDetector.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
+          scoreThreshold: 0.35, maxResults: 5, runningMode: "VIDEO",
+        });
+        return detector;
+      }
+
+      // 영상/사진(원본 크기) 좌표를 object-fit: cover 화면 좌표로 환산
+      function cover(vw, vh, cw, ch) {
+        const s = Math.max(cw / vw, ch / vh);
+        return { s, ox: (cw - vw * s) / 2, oy: (ch - vh * s) / 2 };
+      }
+
+      function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+          canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { w, h };
+      }
+
+      function pickTarget() {
+        if (!detections.length) return null;
+        return detections.slice().sort((a, b) => b.score * b.area - a.score * a.area)[0];
+      }
+
+      function draw() {
+        const { w, h } = resizeCanvas();
+        ctx.clearRect(0, 0, w, h);
+        const [vw, vh] = fallback ? SAMPLE.natural : [video.videoWidth, video.videoHeight];
+        if (!vw || !vh) return;
+        const m = cover(vw, vh, w, h);
+        const target = pickTarget();
+        detections.slice(0, 3).forEach((d) => {
+          const x = d.box.x * m.s + m.ox, y = d.box.y * m.s + m.oy, bw = d.box.w * m.s, bh = d.box.h * m.s;
+          const main = d === target;
+          ctx.lineWidth = main ? 2.5 : 1.5;
+          ctx.strokeStyle = main ? "#fff" : "rgba(255,255,255,0.6)";
+          ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 6;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(x, y, bw, bh, 12); else ctx.rect(x, y, bw, bh);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          // 이름 표시
+          const label = koName(d.key) + "  " + Math.round(d.score * 100) + "%";
+          ctx.font = "600 12px Pretendard, sans-serif";
+          const tw = ctx.measureText(label).width + 16, ty = Math.max(4, y - 26);
+          ctx.fillStyle = main ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.55)";
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(x, ty, tw, 22, 11); else ctx.rect(x, ty, tw, 22);
+          ctx.fill();
+          ctx.fillStyle = main ? "#111" : "#fff";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, x + 8, ty + 11);
+        });
+      }
+
+      function loop(id) {
+        if (id !== session) return;
+        const now = performance.now();
+        if (!fallback && detector && video.readyState >= 2 && now - lastRun > 120) {
+          lastRun = now;
+          try {
+            const res = detector.detectForVideo(video, now);
+            detections = (res.detections || []).map((d) => ({
+              key: d.categories[0].categoryName, score: d.categories[0].score,
+              box: { x: d.boundingBox.originX, y: d.boundingBox.originY, w: d.boundingBox.width, h: d.boundingBox.height },
+              area: d.boundingBox.width * d.boundingBox.height,
+            }));
+            setStatus(detections.length ? koName(pickTarget().key) + " 인식 중" : "물체를 가까이 비춰보세요");
+          } catch (e) { /* 일시적 오류는 무시 */ }
+        }
+        draw();
+        raf = requestAnimationFrame(() => loop(id));
+      }
+
+      function hideAnswer() { clearTimeout(answerTimer); answerEl.hidden = true; asking = false; orb.classList.add("paused"); }
+
+      function ask() {
+        if (asking) return;
+        asking = true;
+        orb.classList.remove("paused");
+        const t = pickTarget();
+        answerEl.hidden = false;
+        answerText.textContent = "…";
+        setTimeout(() => {
+          answerText.textContent = t
+            ? (ITEMS[t.key] ? koName(t.key) + copula(koName(t.key)) + ". " + ITEMS[t.key][1] : koName(t.key) + "처럼 보여요.")
+            : "지금은 물체를 찾지 못했어요. 궁금한 물체를 가까이 비춰 보세요.";
+          orb.classList.add("paused");
+          answerTimer = setTimeout(hideAnswer, 9000);
+        }, 900);
+      }
+
+      function startVoice(id) {
+        if (!SR || fallback) return;
+        try {
+          rec = new SR();
+          rec.lang = "ko-KR"; rec.continuous = true; rec.interimResults = true;
+          rec.onresult = (e) => {
+            if (id !== session) return;
+            const text = Array.from(e.results).map((r) => r[0].transcript).join(" ");
+            if (/뭐|이거|이게|알려|what|this/i.test(text) && Date.now() - lastVoice > 4000) { lastVoice = Date.now(); ask(); }
+          };
+          rec.onend = () => { if (id === session && rec) { try { rec.start(); } catch (_) {} } };
+          rec.onerror = () => {};
+          rec.start();
+        } catch (_) { rec = null; }
+      }
+
+      function stopAll() {
+        session++;
+        cancelAnimationFrame(raf);
+        hideAnswer();
+        if (rec) { const r = rec; rec = null; try { r.onend = null; r.stop(); } catch (_) {} }
+        if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+        video.srcObject = null;
+        detections = [];
+      }
+
+      function startFallback(id, message) {
+        fallback = true;
+        video.hidden = true; photo.hidden = false;
+        const s = SAMPLE;
+        detections = [{ key: s.key, score: s.score, box: { x: s.box.x * s.natural[0], y: s.box.y * s.natural[1], w: s.box.w * s.natural[0], h: s.box.h * s.natural[1] }, area: s.box.w * s.box.h * s.natural[0] * s.natural[1] }];
+        setStatus(message);
+        loop(id);
+      }
+
+      async function openBaking() {
+        stopAll();
+        const id = session;
+        fallback = false; video.hidden = false; photo.hidden = true; detections = [];
+        setStatus("카메라를 준비하고 있어요…");
+        showScreen("screen-baking");
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("no camera api");
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        } catch (_) {
+          if (id === session) startFallback(id, "카메라를 쓸 수 없어 샘플 사진으로 보여드려요");
+          return;
+        }
+        if (id !== session) { stream.getTracks().forEach((t) => t.stop()); return; }
+        video.srcObject = stream;
+        try { await video.play(); } catch (_) {}
+        setStatus("인식 모델을 불러오는 중…");
+        loop(id);
+        ensureDetector().then(() => { if (id === session) setStatus("물체를 가까이 비춰보세요"); })
+          .catch(() => { if (id === session) setStatus("인식 모델을 불러오지 못했어요 (인터넷 연결 확인)"); });
+        startVoice(id);
+      }
+
+      el("bkAskBtn").addEventListener("click", ask);
+      el("bkBackBtn").addEventListener("click", () => { stopAll(); showScreen("screen-select"); });
+      document.querySelector('.glass-card[data-id="baking"]').addEventListener("click", openBaking);
+      window.__openBaking = openBaking; // 테스트용
+    })();
+  </script>
+</body>
+</html>

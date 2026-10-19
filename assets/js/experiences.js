@@ -68,7 +68,8 @@ const SECTIONS = [
       {
         id: "glassview",
         title: "Glass View",
-        description: "준비 중",
+        description: "Smart Glass View 체험",
+        link: "experiences/glassview.html",
       },
     ],
   },

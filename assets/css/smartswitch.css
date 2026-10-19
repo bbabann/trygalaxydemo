@@ -102,11 +102,11 @@
 
 .ss-pill {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   background: var(--muted);
   color: var(--muted-foreground);
@@ -246,7 +246,7 @@
   top: 66.667%;
   z-index: 6;
   width: 12px;
-  height: 92px;
+  height: 88px;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
@@ -265,21 +265,10 @@
   --c: #2f6fed;
 }
 
-/* 양 끝 연결점(폰과 닿는 곳) */
-.ssc-node {
-  width: 9px;
-  height: 9px;
-  box-sizing: border-box;
-  border-radius: 50%;
-  border: 1.5px solid var(--c);
-  background: var(--background);
-  transition: border-color 300ms ease;
-}
-
 .ssc-dots {
   flex: 1;
   width: 100%;
-  margin: 5px 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -597,4 +586,37 @@
 .ss-data-chip svg {
   width: 55%;
   height: 55%;
+}
+
+/* ---------------- 연결되면 폰 뒤에서 은은하게 퍼지는 면 파동 ---------------- */
+
+.ss-frame::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  box-sizing: border-box;
+  border-radius: 17% / 8%;
+  background: rgba(47, 111, 237, 0.2);
+  filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage.is-connected .ss-frame::after {
+  animation: ss-frame-ripple 3s ease-out infinite;
+}
+
+/* 전송 중: 파동이 조금 빨라짐 */
+.stage.is-xfer .ss-frame::after {
+  animation-duration: 2s;
+}
+
+@keyframes ss-frame-ripple {
+  0% { transform: scale(1); opacity: 0.45; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage.is-connected .ss-frame::after { animation: none; }
 }

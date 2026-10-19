@@ -13,7 +13,8 @@ const SECTIONS = [
       {
         id: "quickshare",
         title: "Quick Share",
-        description: "준비 중",
+        description: "Galaxy에서 iPhone으로 사진 전송",
+        link: "experiences/exp4.html?s=qs",
       },
     ],
   },
